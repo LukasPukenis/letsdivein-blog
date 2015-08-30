@@ -1,0 +1,1371 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Archives | Lets Dive!</title>
+  <meta name="author" content="Lukas Pukenis">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Lets Dive!"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Lets Dive!" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Lets Dive!</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title">Archives</h2>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-08-16T07:39:21.000Z"><a href="/2015/08/16/c++-trimming/">Aug 16 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/08/16/c++-trimming/">C++ Trimming</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>I wanted to write <code>trim</code> functionality and was amazed how elegant it can be in c++ with standard library calls and iterators. The idea is simple - construct a new container by passing begin and end iterators. For the begin iterator we can find it with <code>std::find_if_not</code> and for the end iterator its the same but we need to use revered iterators <code>rbegin</code> and <code>rend</code>. Note that there’s a difference between iterators. It doesnt make sense to mix forward and reverse iterators. To convert reverse iterator into a forward one use <code>base</code> method on iterator.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="preprocessor">#include &lt;iostream&gt;</span>
+<span class="preprocessor">#include &lt;iterator&gt;</span>
+<span class="preprocessor">#include &lt;algorithm&gt;</span>
+<span class="preprocessor">#include &lt;cctype&gt;</span>
+<span class="preprocessor">#include &lt;string&gt;</span>
+
+<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;
+T trim(T <span class="keyword">const</span> & str) {
+  <span class="keyword">return</span> T(
+    <span class="built_in">std</span>::find_if_not(str.begin(), str.end(), <span class="built_in">std</span>::<span class="built_in">isspace</span>),
+    <span class="built_in">std</span>::find_if_not(str.rbegin(), str.rend(), <span class="built_in">std</span>::<span class="built_in">isspace</span>).base()
+  );
+}
+</pre></td></tr></table></figure>
+
+<p>And it works on generic types that provide iterators. This is a generic solution but doesn’t make sense on other types than strings and char data data because <code>std::isspace</code> is hardcoded. We could generify this solution to accept the checker so we could trim for example a <code>std::vector&lt;int&gt;</code>.</p>
+<p>First lets define <code>&lt;&lt;</code> operator for <code>std::vector&lt;int&gt;</code> so we could easily print it with <code>std::cout</code></p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="built_in">std</span>::ostream & <span class="keyword">operator</span>&lt;&lt; (<span class="built_in">std</span>::ostream& os, <span class="keyword">const</span> <span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> &v) {
+  <span class="keyword">for</span> (<span class="keyword">auto</span> <span class="keyword">const</span> i : v) {
+    os &lt;&lt; i &lt;&lt; <span class="string">"  "</span>;
+  }
+  <span class="keyword">return</span> os;
+}
+</pre></td></tr></table></figure><br>Now we can launch<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> v = {<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>};
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; v;
+</pre></td></tr></table></figure><br>and it prints <code>1 2 3</code>. Lets move the checker function into a template argument because it may be a <code>std::function</code> or a functor, I just want to know I can call <code>operator()</code> on it.<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre>template &lt;typename T, typename C&gt;
+T trim(T <span class="keyword">const</span> & <span class="keyword">str</span>, C <span class="keyword">check</span>) {
+  <span class="keyword">return</span> T(
+    std::find_if_not(<span class="keyword">str</span>.begin(), <span class="keyword">str</span>.end(), <span class="keyword">check</span>),
+    std::find_if_not(<span class="keyword">str</span>.rbegin(), <span class="keyword">str</span>.rend(), <span class="keyword">check</span>).base()
+    );
+}
+</pre></td></tr></table></figure><br>and now do partial specialization without checker function(providing default <code>std::isspace</code> check)<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;
+T trim(T <span class="keyword">const</span> & str) {
+  <span class="keyword">return</span> T(
+    <span class="built_in">std</span>::find_if_not(str.begin(), str.end(), <span class="built_in">std</span>::<span class="built_in">isspace</span>),
+    <span class="built_in">std</span>::find_if_not(str.rbegin(), str.rend(), <span class="built_in">std</span>::<span class="built_in">isspace</span>).base()
+    );
+}
+</pre></td></tr></table></figure>
+
+<p>And its test time</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="keyword">auto</span> a = <span class="built_in">std</span>::<span class="built_in">string</span>(<span class="string">"hello   "</span>);
+<span class="keyword">auto</span> b = <span class="built_in">std</span>::<span class="built_in">string</span> (<span class="string">"hello   "</span>);
+<span class="keyword">auto</span> c = <span class="built_in">std</span>::<span class="built_in">string</span>(<span class="string">"    hello   "</span>);
+
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"["</span> &lt;&lt; trim(a) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"["</span> &lt;&lt; trim(b) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"["</span> &lt;&lt; trim(c) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+</pre></td></tr></table></figure><br>Results are<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre>[hello]
+[hello]
+[hello]
+</pre></td></tr></table></figure><br>And now its vector time. Lets trim out the multipliers of 10<br><br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="keyword">bool</span> testPowerOf10(<span class="keyword">int</span> n) {
+  <span class="keyword">return</span> n % <span class="number">10</span> == <span class="number">0</span>;
+}
+
+<span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> d = {<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>};
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"notrim ["</span> &lt;&lt; trim(d) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"trim   ["</span> &lt;&lt; trim(d, testPowerOf10) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+</pre></td></tr></table></figure><br>the results are<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="tag">notrim</span> <span class="attr_selector">[0  1  2  3  4  5  6  7  8  ]</span>
+<span class="tag">trim</span>   <span class="attr_selector">[1  2  3  4  5  6  7  8  9  ]</span>
+</pre></td></tr></table></figure>
+
+<p>To be fully satisfied I should do left and right trims as current trim works on both sides and sometimes we need only one. Left trim should contain very minimal changes</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> C&gt;
+T ltrim(T <span class="keyword">const</span> & str, C check = <span class="built_in">std</span>::<span class="built_in">isspace</span>) {
+  <span class="keyword">return</span> T(
+    <span class="built_in">std</span>::find_if_not(str.begin(), str.end(), check),
+    str.end()
+    );
+}
+
+<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;
+T ltrim(T <span class="keyword">const</span> & str) {
+  <span class="keyword">return</span> T(
+    <span class="built_in">std</span>::find_if_not(str.begin(), str.end(), <span class="built_in">std</span>::<span class="built_in">isspace</span>),
+    str.end()
+    );
+}
+</pre></td></tr></table></figure><br>the difference is that I removed the reverse check. And for <code>rtrim</code> it should look like this<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre>T <span class="function">rtrim(T const & str, C check = std::isspace)</span> {
+  return <span class="function">T(
+    str.<span class="function">begin()</span>,
+    std::<span class="function">find_if_not(str.<span class="function">rbegin()</span>, str.<span class="function">rend()</span>, std::isspace)</span>.<span class="function">base()</span>+<span class="number">1</span>
+    )</span>;
+}
+
+template &lt;typename T&gt;
+T <span class="function">rtrim(T const & str)</span> {
+  return <span class="function">T(
+    str.<span class="function">begin()</span>,
+    std::<span class="function">find_if_not(str.<span class="function">rbegin()</span>, str.<span class="function">rend()</span>, std::isspace)</span>.<span class="function">base()</span>
+    )</span>;
+}
+</pre></td></tr></table></figure><br>Note that trim functions with <code>std::vector&lt;int&gt;</code> or other non-string data without proper checker function may behave strange like this:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre><span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> d = {<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>};
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"notrim ["</span> &lt;&lt; rtrim(d) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+<span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"trim   ["</span> &lt;&lt; rtrim(d, testPowerOf10) &lt;&lt; <span class="string">"]"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+</pre></td></tr></table></figure>
+
+<p>It will produce</p>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="tag">notrim</span> <span class="attr_selector">[0  1  2  3  4  5  6  7  8  ]</span>
+<span class="tag">trim</span>   <span class="attr_selector">[0  1  2  3  4  5  6  7  8  9  ]</span>
+</pre></td></tr></table></figure><br>it is so because <a href="http://en.cppreference.com/w/cpp/string/byte/isspace" target="_blank" rel="external">std::isspace</a> filters out line feed<em>(0x0a)</em> and horizontal tab<em>(0x09)</em> values so it doesnt make sense to use on non char data.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-08-10T17:44:23.000Z"><a href="/2015/08/10/Sudoku-Solver/">Aug 10 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/08/10/Sudoku-Solver/">Sudoku Solver</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Sudoku is a simple puzzle, quite boring(personal opinion). It’s rules are very basic - only have numbers <strong>1</strong> to <strong>9</strong> appear once in the row and column and also in 3x3 by 3x3 block.</p>
+<p>This is an example sudoku puzzle</p>
+<img src="/images/sudoku/sudoku.png" class="[here]">
+
+<p>This is an example of solved puzzle</p>
+<img src="/images/sudoku/sudoku-solved.png" class="[]">
+
+<p>Sudoku of course could be solved by applying bruteforce but we dont have that much of computational power. A better method would be to find an empty node and try to fill it in with a number from <em>1</em> to <em>9</em> then search for another empty node and insert a number which is valid there. This is an easy to implement method and our main loop will look something like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">solve</span>()</span>
+  node = find_unassigned_node()
+  <span class="keyword">for</span> i= <span class="number">1</span>, <span class="number">9</span> <span class="built_in">do</span>
+    node.<span class="built_in">value</span> = i
+    <span class="keyword">if</span> solve() <span class="keyword">then</span> <span class="constant">return</span> <span class="constant">true</span> <span class="function"><span class="keyword">end</span></span>
+    node.<span class="built_in">value</span> = <span class="constant">EMPTY</span>
+</pre></td></tr></table></figure>
+
+<p>This pseudocode is actually correct <code>Lua</code> code but Lua has nothing to do in this article :). This is transcription of whats going on: “I will try placing 1 here because I can and then I will look for another empty node and will try to fit in what I can. In case I can’t fit any value I know I’ve failed somewhere”. After looping through all the values and not returning true we are very sure we have failed so <code>return false</code> should indicate that. <code>return true</code> of course should indicate success.</p>
+<p>Now actual <code>C++</code> code for main loop look like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td><td class="code"><pre>bool solve() {
+    /*
+      we are sure puzzle is solved <span class="keyword">as</span> there are no more empty nodes
+      <span class="keyword">and</span> that will not happen on failure because <span class="keyword">in</span> case <span class="keyword">of</span> something wrong
+      the recursive algorithm will backtrack <span class="keyword">to</span> the point where mistake will be fixed
+    */
+
+    auto pos = getUnassignedPosition();
+    <span class="keyword">if</span> (pos == -<span class="number">1</span>) <span class="keyword">return</span> <span class="keyword">true</span>;
+
+    <span class="comment">// we have 1..9 values to try. 0 is invalid value in Sudoku so we can use it to indicate empty node</span>
+    <span class="keyword">for</span> (auto <span class="keyword">val</span> = <span class="number">1</span>; <span class="keyword">val</span> &lt; <span class="number">10</span>; <span class="keyword">val</span>++) {
+      <span class="keyword">if</span> (isGood(pos, <span class="keyword">val</span>)) {
+        puzzle[pos] = <span class="keyword">val</span>;
+        <span class="keyword">if</span> (solve()) <span class="keyword">return</span> <span class="keyword">true</span>;
+        puzzle[pos] = <span class="number">0</span>;
+      }
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+  }
+</pre></td></tr></table></figure><br>Notice that <code>true</code> will be returned only when we can’t insert any more values anywhere meaning puzzle is full. At that point the recursion will loop back through the <code>if (solve()) return true;</code> in case <code>solve()</code> doesnt return <code>true</code> we reset the value thus “fixing” the mistake and trying another number and if all numbers fail we return false thus <code>puzzle[pos] = 0;</code> can revert back our mistake. If the puzzle is solvable then a node must accept at least one number so we will always have another call to <code>solve()</code> in case you were wondering that <code>return false;</code> will prematurely return from the search.<br><br><br>Method for finding unassigned positions is pretty trivial:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="comment">// returns -1 on failure</span>
+<span class="keyword">int</span> getUnassignedPosition() {
+    <span class="keyword">auto</span> idx = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> <span class="keyword">const</span> &i : puzzle) {
+      <span class="keyword">if</span> (i == <span class="number">0</span>) <span class="keyword">return</span> idx;
+      idx++;
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+  }
+</pre></td></tr></table></figure>
+
+<p>And the main bits left are checking if slot is good for the value we want to insert, we need to check that vertical, horizontal, and blocks:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+</pre></td><td class="code"><pre><span class="built_in">bool</span> isGood(u_int x, u_int y, u_int val) {
+    <span class="comment">// check horizontal</span>
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">9</span>; i++) {
+      <span class="keyword">if</span> (puzzle[y * <span class="number">9</span> + i] == val) <span class="keyword">return</span> <span class="literal">false</span>;
+    }
+    
+    <span class="comment">// check vertical</span>
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">9</span>; i++) {
+      <span class="keyword">if</span> (puzzle[i * <span class="number">9</span> + x] == val) <span class="keyword">return</span> <span class="literal">false</span>;
+    }
+
+    <span class="comment">// check 3x3 block</span>
+    <span class="keyword">auto</span> xBlockIndex = x / <span class="number">3</span>;
+    <span class="keyword">auto</span> yBlockIndex = y / <span class="number">3</span>;
+
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) {
+      <span class="keyword">for</span> (<span class="keyword">auto</span> j = <span class="number">0</span>; j &lt; <span class="number">3</span>; j++) {
+        <span class="keyword">auto</span> _x = xBlockIndex * <span class="number">3</span> + i;
+        <span class="keyword">auto</span> _y = yBlockIndex * <span class="number">3</span> + j;
+        <span class="keyword">if</span> (puzzle[_y * <span class="number">9</span> + _x] == val) <span class="keyword">return</span> <span class="literal">false</span>;
+      }
+    }
+
+    <span class="keyword">return</span> <span class="literal">true</span>;
+  }
+
+  <span class="comment">// overload for flat position instead of x and y pair</span>
+  <span class="built_in">bool</span> isGood(u_int flatPosition, u_int val) {
+    <span class="keyword">return</span> isGood(flatPosition % <span class="number">9</span>, flatPosition / <span class="number">9</span>, val);
+  }
+</pre></td></tr></table></figure><br>And here we go, this thing solves sudoku quite fast. To be exact on i7-4770k it solves ~1587 puzzles in 1 second which is amazing by looking at what primitive and simple algorithm it is. It can be even faster while trading some memory for saving some meta information about the grid, for example updating what values can be inserted in this row or column or block.<br><br>Here’s full code:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+</pre></td><td class="code"><pre><span class="preprocessor">#include "stdafx.h"</span>
+<span class="preprocessor">#include &lt;vector&gt;</span>
+<span class="preprocessor">#include &lt;iostream&gt;</span>
+
+<span class="keyword">struct</span> Sudoku {
+  <span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> u_int;
+
+  <span class="keyword">bool</span> isGood(u_int x, u_int y, u_int val) {    
+    <span class="comment">// check horizontal</span>
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">9</span>; i++) {
+      <span class="keyword">if</span> (puzzle[y * <span class="number">9</span> + i] == val) <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    
+    <span class="comment">// check vertical</span>
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">9</span>; i++) {
+      <span class="keyword">if</span> (puzzle[i * <span class="number">9</span> + x] == val) <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+
+    <span class="comment">// check 3x3 block</span>
+    <span class="keyword">auto</span> xBlockIndex = x / <span class="number">3</span>;
+    <span class="keyword">auto</span> yBlockIndex = y / <span class="number">3</span>;
+
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) {
+      <span class="keyword">for</span> (<span class="keyword">auto</span> j = <span class="number">0</span>; j &lt; <span class="number">3</span>; j++) {
+        <span class="keyword">auto</span> _x = xBlockIndex * <span class="number">3</span> + i;
+        <span class="keyword">auto</span> _y = yBlockIndex * <span class="number">3</span> + j;
+        <span class="keyword">if</span> (puzzle[_y * <span class="number">9</span> + _x] == val) <span class="keyword">return</span> <span class="keyword">false</span>;
+      }
+    }
+
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+  }
+
+  <span class="keyword">bool</span> isGood(u_int flatPosition, u_int val) {
+    <span class="keyword">return</span> isGood(flatPosition % <span class="number">9</span>, flatPosition / <span class="number">9</span>, val);
+  }
+
+
+  <span class="keyword">bool</span> solve() {
+    <span class="keyword">auto</span> pos = getUnassignedPosition();
+    <span class="keyword">if</span> (pos == -<span class="number">1</span>) <span class="keyword">return</span> <span class="keyword">true</span>;
+
+    <span class="keyword">for</span> (<span class="keyword">auto</span> val = <span class="number">1</span>; val &lt; <span class="number">10</span>; val++) {
+      <span class="keyword">if</span> (isGood(pos, val)) {
+        puzzle[pos] = val;
+        <span class="keyword">if</span> (solve()) <span class="keyword">return</span> <span class="keyword">true</span>;
+        puzzle[pos] = <span class="number">0</span>;
+      }
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+  }
+
+  <span class="keyword">int</span> getUnassignedPosition() {
+    <span class="keyword">auto</span> idx = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> <span class="keyword">const</span> &i : puzzle) {
+      <span class="keyword">if</span> (i == <span class="number">0</span>) <span class="keyword">return</span> idx;
+      idx++;
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+  }
+
+  <span class="keyword">void</span> solve(<span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> & _puzzle) {
+    puzzle = _puzzle;
+
+    solve();
+    print();
+  }
+
+  <span class="keyword">void</span> print() {
+    <span class="keyword">for</span> (<span class="keyword">auto</span> i = <span class="number">0u</span>; i &lt; <span class="number">9</span>; i++) {
+      <span class="keyword">for</span> (<span class="keyword">auto</span> j = <span class="number">0u</span>; j &lt; <span class="number">9</span>; j++) {
+        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; puzzle[i * <span class="number">9</span> + j] &lt;&lt; <span class="string">" "</span>;
+      }
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="built_in">std</span>::endl;
+    }
+    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="built_in">std</span>::endl;
+  }
+<span class="keyword">private</span>:
+  <span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> puzzle;
+};
+
+<span class="keyword">int</span> main() {
+  <span class="built_in">std</span>::<span class="stl_container"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;</span> puzzle = {
+    <span class="number">3</span>, <span class="number">0</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">0</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">0</span>, <span class="number">0</span>,
+    <span class="number">5</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
+    <span class="number">0</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="number">1</span>,
+    <span class="number">0</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">8</span>, <span class="number">0</span>,
+    <span class="number">9</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">8</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>,
+    <span class="number">0</span>, <span class="number">5</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">9</span>, <span class="number">0</span>, <span class="number">6</span>, <span class="number">0</span>, <span class="number">0</span>,
+    <span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">5</span>, <span class="number">0</span>,
+    <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">7</span>, <span class="number">4</span>,
+    <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>
+  };
+
+  Sudoku sudoku;
+  sudoku.solve(puzzle);
+
+  <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre></td></tr></table></figure>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-02-16T18:19:50.000Z"><a href="/2015/02/16/day--or--night/">Feb 16 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/02/16/day--or--night/">Day or Night</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>There was an interesting problem - to decide if given image is day or night. This is a problem on HackerRank and this solution should only be used as a reference because its more fun to solve those challenges yourself.</p>
+<p>The input comes in as <code>r1, g1, b1 r2, g2, b2 r3, g3, b3 ...</code>. So the image decoding is handled for us. Given all the pixels how should we decide is the image day or night?</p>
+<p>Calculating average <strong>RGB</strong> value provides nothing sensible as RGB is not linear with respect to lighting. To convert RGB to something what maps light linearly we have some choices like HSV or HSL. HSV Cylinder proves that lightness is quite linear</p>
+<img src="/images/common/hsv_cylinder.png" class="[]">
+
+<p>So I’ve copied this code from somewhere, really cant recall where:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="code"><pre><span class="comment">// assumes r, g, b are in [0 .. 1.0] range</span>
+<span class="keyword">void</span> RGB2HSV(<span class="keyword">float</span> r, <span class="keyword">float</span> g, <span class="keyword">float</span> b, <span class="keyword">float</span> &h, <span class="keyword">float</span> &s, <span class="keyword">float</span> &v) {
+  <span class="keyword">float</span> K = <span class="number">0.f</span>;
+
+  <span class="keyword">if</span> (g &lt; b) {
+    <span class="built_in">std</span>::swap(g, b);
+    K = -<span class="number">1.f</span>;
+  }
+
+  <span class="keyword">if</span> (r &lt; g) {
+    <span class="built_in">std</span>::swap(r, g);
+    K = -<span class="number">2.f</span> / <span class="number">6.f</span> - K;
+  }
+
+  <span class="keyword">float</span> chroma = r - <span class="built_in">std</span>::min(g, b);
+  h = <span class="built_in">fabs</span>(K + (g - b) / (<span class="number">6.f</span> * chroma + <span class="number">1e-20</span>f));
+  s = chroma / (r + <span class="number">1e-20</span>f);
+  v = r;
+}
+</pre></td></tr></table></figure>
+
+<p>which is simply direct translation of wikipedia formulas I believe.</p>
+<p>Now I will SUM all the <strong>R</strong>, <strong>G</strong> and <strong>B</strong> values and get the average. Now with given average pixel<br>of the image I can convert it to HSV and check for <strong>V(light intensity)</strong> value.</p>
+<p>If you want to see HSV in effect, you can open any image editing software(Photoshop) or just click <a href="https://www.shadertoy.com/view/Xlf3zs" target="_blank" rel="external">this Shadertoy url</a>. It’s a Shadertoy demo I made. Bottom left quad is the normal view. Top left is <strong>H</strong>ue, bottom right is for <strong>S</strong>aturation and top right is for <strong>L</strong>ighting. Each value is multiplied by a different coefficient and time so you can see them in effect out of sync(imho better).</p>
+<p>So as we have our average pixel, just convert it to HSV. Now take the <strong>V</strong> value and compare it against some threshold. Voila. This is some cheap and dirty detection.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+</pre></td><td class="code"><pre><span class="keyword">int</span> main() {
+  <span class="keyword">auto</span> rSum = <span class="number">0.0</span>;
+  <span class="keyword">auto</span> gSum = <span class="number">0.0</span>;
+  <span class="keyword">auto</span> bSum = <span class="number">0.0</span>;
+
+  <span class="keyword">auto</span> size = <span class="number">0</span>;
+
+  <span class="built_in">std</span>::<span class="built_in">string</span> entry;
+  <span class="keyword">while</span> (<span class="built_in">std</span>::<span class="built_in">cin</span> &gt;&gt; entry) {
+    <span class="built_in">std</span>::replace(entry.begin(), entry.end(), <span class="string">','</span>, <span class="string">' '</span>);
+    <span class="built_in">std</span>::<span class="built_in">stringstream</span> input(entry);
+
+    <span class="keyword">int</span> r, g, b;
+
+    input &gt;&gt; r;
+    input &gt;&gt; g;
+    input &gt;&gt; b;
+
+    rSum += r;
+    gSum += g;
+    bSum += b;
+    size++;
+  }
+
+  <span class="keyword">if</span> (size == <span class="number">0</span>) <span class="keyword">return</span> -<span class="number">1</span>;
+
+  <span class="keyword">auto</span> rAvg = rSum / size;
+  <span class="keyword">auto</span> gAvg = gSum / size;
+  <span class="keyword">auto</span> bAvg = bSum / size;
+  
+  rAvg /= <span class="number">255.0</span>;
+  gAvg /= <span class="number">255.0</span>;
+  bAvg /= <span class="number">255.0</span>;
+
+  <span class="keyword">auto</span> threshold = <span class="number">0.7</span>;
+
+  <span class="keyword">float</span> h, s, v;
+  RGB2HSV(rAvg, gAvg, bAvg, h, s, v);
+
+  <span class="keyword">if</span> (v &lt; threshold) {
+    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"night"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+  }
+  <span class="keyword">else</span> {
+    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"day"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+  }
+
+  <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre></td></tr></table></figure>
+
+<p>Again. Dont copy paste this code if you don’t get it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="pos">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-18T20:21:05.000Z"><a href="/2014/11/18/Emacs-random-bits-1/">Nov 18 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/18/Emacs-random-bits-1/">Emacs: Random Bits   1</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>I have played more with elisp just a little bit and found it quite a simple language to work with. </p>
+<h2 id="What_to_look_for">What to look for</h2>
+<p><a href="https://www.gnu.org/software/emacs/manual/elisp.html" target="_blank" rel="external">GNU Elisp documentation</a> is simply awesome. It contains a lot of examples and information.</p>
+<p>IRC #emacs channel on freenode is another source of help. People there are quick to respond and often answer within minutes.</p>
+<p>Also <code>paredit</code> mode helps with parentheses as if it automatically writes matching <code>)</code> when you write <code>(</code> like I write <code>(defun</code> and it immediately adds <code>)</code> at the end. Also it doesnt let you automatically remove either of parenthesis if there’s some content in between. In that case it moves cursor to the beginning of a word for you to delete first and then with one remove key deletes both parens.</p>
+<h2 id="Variable_logger">Variable logger</h2>
+<p>When I use Lua I often call my middleware logging library to log out variables. I have made a similar thing but in the language itself in <a href="https://github.com/LukasPukenis/prettyDebug" target="_blank" rel="external">Javascript</a> but it has limitations and is only for debugging purposes so making an editor spew out the needed log call is the way here.</p>
+<p>The function is one of my first more real attempts to make somthing with elisp. I don’t care about optimizing it or so as I will call it once in a while only.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="list">(<span class="title">defun</span> lua-log<span class="list">(<span class="title">p1</span> p2)</span>
+  <span class="list">(<span class="title">interactive</span> <span class="string">"r"</span>)</span>
+    <span class="list">(<span class="title"><span class="built_in">let</span></span> <span class="list">(<span class="title">variables</span> result)</span>
+      <span class="list">(<span class="title">setq</span> variables <span class="list">(<span class="title">mapcar</span> <span class="list">(<span class="title">lambda</span> <span class="list">(<span class="title"><span class="built_in">var</span></span>)</span> <span class="list">(<span class="title"><span class="built_in">concat</span></span> <span class="string">"'"</span> var <span class="string">" = ', "</span> var <span class="string">", "</span> )</span>)</span> <span class="list">(<span class="title">split-string</span> <span class="list">(<span class="title">buffer-substring-no-properties</span> p1 p2)</span>)</span>)</span> )</span>
+      <span class="list">(<span class="title">setq</span> result <span class="list">(<span class="title">mapconcat</span> 'identity <span class="list">(<span class="title"><span class="built_in">reverse</span></span><span class="list">(<span class="title">cdr</span> <span class="list">(<span class="title"><span class="built_in">reverse</span></span> variables)</span>)</span>)</span> <span class="string">""</span>)</span>)</span>
+      <span class="list">(<span class="title">setq</span> result
+        <span class="list">(<span class="title"><span class="built_in">concat</span></span>
+         result
+         <span class="list">(<span class="title">substring</span> <span class="list">(<span class="title">car</span> <span class="list">(<span class="title"><span class="built_in">last</span></span> variables)</span>)</span><span class="number"> 0</span> -2)</span>)</span>)</span>
+      <span class="list">(<span class="title">delete-region</span> p1 p2)</span>
+      <span class="list">(<span class="title">insert</span> <span class="list">(<span class="title"><span class="built_in">format</span></span> <span class="string">"log:warn(%s)"</span> result)</span>)</span>
+   )</span>
+)</span>
+</pre></td></tr></table></figure>
+
+<p>My function for logging is <code>log:warn(x, y, z, ...)</code> and I wanted to write <code>x y z</code> mark it and run command to generate the needed call.</p>
+<p>So it begs for an explanation as in the other case there’s no point of writing about it:</p>
+<ul>
+<li><code>defun name args</code> defines a function with a name and list of arguments</li>
+<li><code>interactive &quot;r&quot;</code> means our function can be found with <code>M-x</code> and argument <code>r</code> means that it receives two<br>parameters - start and end points of our selected region</li>
+<li><code>let</code>, <code>setq</code>, <code>buffer-substring-no-properties</code>, <code>message</code> were explained in <a href="http://www.letsdive.in/2014/11/15/Emacs---The-returning/" target="_blank" rel="external">previous</a> post</li>
+<li><code>mapcar</code> applies a function to each element of a list</li>
+<li><code>reverse</code> returns reversed list</li>
+<li><code>split-string</code> splits passed string by passed separators. As we have not passed any it simply splits by whitespace</li>
+<li><code>mapconcat</code> the same as <code>mapcar</code> but concatenates the results into a string starting string with the last parameter</li>
+<li><code>identity</code> function which returns the same elements. It’s useful as <code>mapconcat</code> runs a function to retrieve elements and as our elements will be strings, there are no modifications, so <code>identity</code> just returns them. It’s just a filler as function requires a function to return elements.</li>
+<li><code>car</code>, <code>cdr</code> and <code>last</code> are list processing functions. <code>car</code> - returns first element, <code>cdr</code> - everything except first. <code>last</code> speaks for itself.</li>
+<li><code>concat</code> concatenates passed strings into one string</li>
+<li><code>substring</code> returns portion of passed string from start to end indexes. If end index is negative it removes towards the end so in our case <code>0 -2</code> removes the <code>,</code> we have just added previously when <code>mapcar</code>ed the list to have “item”=item, …</li>
+<li><code>delete-region</code> deletes region. With this call we remove our selected region</li>
+<li><code>insert</code> this insert content into a buffer at cursor location. In combination with <code>delete-region</code> it removes our selection and replaces with a new one</li>
+</ul>
+<p>In a few words our function:</p>
+<ul>
+<li>extracts our selection</li>
+<li>builds a list <code>variables</code> with each item in a string transformed into <code>&quot;item=&quot;, item,</code></li>
+<li>grabs all the elements from <code>variables</code> except for last and concats them into one string</li>
+<li>appends the last element with the last <code>,</code> removed</li>
+<li>replaces selected region with a new string</li>
+</ul>
+<p>In the beginning I noted this is unoptimized - when we grab every item except last I don’t know the existing function so I just reverse the list, so the last item is now the first then run <code>cdr</code> to grab everything except it and reverse back.</p>
+<p>Now as I evaluate this function I may want to log out my <code>event</code> object along with mouse coordinates so I just type:</p>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">event</span> mouseX mouseY_
+</pre></td></tr></table></figure><br>and my cursor is at <code>_</code> then I <code>C-SPC C-a</code> to mark the whole line then <code>M-x lua-log</code> and voila. Now of course this method can be bind to some key combination but I believe I shouldn’t waste key bindings for such a seldom task so <code>M-x pattern</code> way works especially when you can type in a pattern like <code>lulo</code> and if it doesnt collide with another similar named function it will be selected.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-15T19:28:55.000Z"><a href="/2014/11/15/Emacs---The-returning/">Nov 15 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/15/Emacs---The-returning/">Emacs: the Returning</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>So I have started trying to use Emacs again after like half a year after my first try. And this time it’s a pleasure. I believe I needed more different approach.</p>
+<p>Note that for each plugin you should read it’s documentation about how to set up it properly for your needs. It will probably cost you a few hours to set things up properly but I amortized the cost between different days, adding more stuff each day and also getting used to the stuff I have already added.</p>
+<h3 id="What_have_I_done_differently">What have I done differently</h3>
+<p>What I have installed immediately by searching over the internet to supply me with similar to sublime features</p>
+<ul>
+<li>Switch control key to caps lock key</li>
+<li>Melpa package repository</li>
+<li>Helm</li>
+<li>Projectile</li>
+<li>Helm-projectile</li>
+</ul>
+<p>And my emacs life was never the same. With only these few modules Emacs immediately became almost as efficient as Sublime text for me.</p>
+<h2 id="Keys">Keys</h2>
+<ul>
+<li><code>C-x</code> is hold control and then press <code>x</code>.</li>
+<li><code>C-x C-x</code> means hold control and press <code>x</code>, release control and repeat. Or you can hold control and hit <code>x</code> twice!</li>
+<li><code>C-x s</code> means hold control, then hit <code>x</code>, release control and hit <code>s</code></li>
+<li><code>M-x</code> means <code>alt</code>  key and then <code>x</code> key.</li>
+</ul>
+<h2 id="Caps_lock">Caps lock</h2>
+<p>I have read about switching control key to caps lock on a lot of websites and decided to give it a try. It really helps to use Emacs as my pinky sits on caps lock naturally. And I don’t feel awkward.</p>
+<h2 id="Melpa">Melpa</h2>
+<p>Melpa is a repository for Emacs packages. It contains a big list of packages and needs a mention here.<br>Add this to your <code>.emacs</code> and never turn back:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="list">(<span class="title">when</span> <span class="list">(<span class="title">&gt;=</span> emacs-major-version <span class="number">24</span>)</span>
+  <span class="list">(<span class="title">require</span> 'package)</span>
+  <span class="list">(<span class="title">package-initialize</span>)</span>
+  <span class="list">(<span class="title">add-to-list</span> 'package-archives <span class="quoted">'(<span class="string">"melpa"</span> . <span class="string">"http://melpa.milkbox.net/packages/"</span>)</span> <span class="literal">t</span>)</span>
+  )</span>
+</pre></td></tr></table></figure>
+
+<p>You can view packages with <code>M-x list-packages</code> or install immediately with <code>M-x install-package</code>. Package manager lets me to try a lot of different plugins immediately and grep through some keywords I am interested in. For example I am interested if something comes with <code>*undo*</code>in package name, so I <code>M-x list-packages</code> then <code>C-s</code> and search for my query.</p>
+<h2 id="Undo/redo_copy/paste_and_cancel_things">Undo/redo copy/paste and cancel things</h2>
+<p>One major thing which I was missing was <code>C-z</code> and <code>C-y</code> for undo/redo. These standart keybindings are available in <a href="http://www.emacswiki.org/CuaMode" target="_blank" rel="external">CuaMode</a>  but I was headed for a challenge. Also Cua mode lets you have standart copy/cut keywords as standart Emacs copy is <code>M-w</code> and cut is <code>C-w</code> and paste is <code>C-y</code>.</p>
+<p>Emacs has your back with  <code>C-x u</code> to undo. Emacs undo/redo tree is kind of different from usual applications and needs time to get used to but the good thing is - you can almost always revert to a previous state.</p>
+<p><code>C-g</code> cancels current command. In case you messed up some Emacs chord or launched not wanted command <code>C-g</code> and it’s canceled.</p>
+<p>If some annoying buffer opened and you want to get rid of it hit <code>C-x k</code> to kill it or <code>C-x &lt;left&gt;</code> or <code>C-x &lt;right</code>&gt; to switch to previous or next buffer. <code>C-x b</code> opens you a list of buffers you have and you can enter a pattern.</p>
+<p>To redo simply cancel redo. How so? Example:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre>i <span class="keyword">say</span>
+hello
+emacs
+<span class="number">_</span>
+</pre></td></tr></table></figure>
+
+<p>My cursors is <code>_</code>. Now <code>C-x u</code> moves cursor one line up to the end of the line, another <code>C-x u</code> removes <code>emacs</code> line and so forth. Now what if I want to redo? Then <code>C-g</code> and each <code>C-x u</code> will now redo. To master this in Emacs I highly recommend reading a manual as it’s quite hard to understand without some experimentation and a manual.</p>
+<h2 id="Helm_?">Helm ?</h2>
+<p>Helm changes Emacs popups with more appealing and interactive ones of Helm. I do not underestimate Emacs but Helm really improves experience. Upon quick configuration by guide I can:</p>
+<h3 id="See_interactive_window_as_I_type_M-x">See interactive window as I type M-x</h3>
+<p>This lets me type in a pattern for a command I am looking for. Need I sort lines but don’t remember the command? “M-x sor li” and in the results I immediately see possible candidates:</p>
+<img src="/images/emacs/4/meta%20x.jpg" class="[]">
+
+<h3 id="Interactive_occurrence_of_a_pattern">Interactive occurrence of a pattern</h3>
+<p><code>helm-occur</code> differs from Emacs native <code>occur</code> command so that it’s interactive meaning when I navigate with keys through results helm automatically focus Emacs to show the cursor on appropriate line instead of switching to results frame and hitting RET on wanted occurrence.</p>
+<h2 id="Projectile">Projectile</h2>
+<p>This is simply a must plugin for working on a project. You can set the project by putting a <code>.projectile</code> into your project. In the file you can also add files or directories to ignore for projectile.</p>
+<p>Projectile works with helm and there are only two functions I use. Bind them to any key you want:</p>
+<p>1) <code>helm-projectile</code> if not in a project it asks you to open a project and shows the recent one. If the project is opened it lets you enter a pattern and interactively shows you matched files in your directory! (Sublime text users <code>C-p</code>)</p>
+<p>2) <code>projectile-grep</code> greps through the project for a pattern. I set it to <code>C-c g</code>. If I want to search in certain files I do <code>C-u C-c g</code> and then after typing in a pattern I can type in a pattern for files like <code>*.lua</code>.</p>
+<h2 id="Marks">Marks</h2>
+<p>When interacting with a buffer it’s really often needed to bookmark certain parts to jump quickly later. For this functionality Emacs has mark ring.<br><code>C-x C-x</code> to set mark<br><code>C-u C-x</code> to iterate through mark ring.<br>It’s a simple killer feature which can be learned to be used in under a minute.</p>
+<p>Imagine you have a big file and you just hit some interesting place and you quickly need to jump to the head of the file and jump back. You do <code>C-x C-x</code> then <code>M-&lt;</code> after you look for your file header <code>C-u C-x</code> and you are where you have just been.</p>
+<h2 id="Rectangles">Rectangles</h2>
+<p>Rectangles allow to work with rectangular areas of the buffer. This at first seemed like a useless feature. Who works on rectangles..? It seems I work on rectangles. A LOT. You can add test, replace text, delete rectangular area and so on.</p>
+<p>Example:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">demo</span>()</span>
+<span class="built_in">local</span> <span class="operator">a</span> = <span class="number">1</span>
+<span class="built_in">local</span> b = <span class="number">2</span>
+<span class="built_in">local</span> c = <span class="number">3</span>
+<span class="function"><span class="keyword">end</span></span>
+</pre></td></tr></table></figure>
+
+<p>I want to indent those local variable declarations using rectangles. Put the cursor on <code>l</code> on first <code>local</code>. Then <code>C-space</code> to start selecting, hit down two times so it looks like this:</p>
+<img src="/images/emacs/4/selection.JPG" class="[]">
+
+<p>and now <code>C-x r t</code> to replace rectangular area with text. It will prompt you for a replacement. Our rectangle is area between selection start and end. Type in <code> </code> two empty spaces and RET. Bam:</p>
+<img src="/images/emacs/4/indented.jpg" class="[]">
+
+<p>Now I want to remove those <code>local</code> strings. I put my cursor on first <code>l</code> letter of first <code>local</code> definition. Hit down arrow twice and <code>M-f</code> to move cursor one word forward. I got this:</p>
+<img src="/images/emacs/4/removed.JPG" class="[]">
+
+<p>Now <code>C-x r d</code> to remove rectangular area and those <code>local</code> definitions are long gone.</p>
+<p><code>C-x r c</code> lets you fill in a rectangle with spaces. Not delete like <code>C-x r d</code> but replace with space symbols.</p>
+<p>Another neat feature I just found is <code>C-x r N</code> which puts numbers increasing from 1 to each rectangular area start position. In our demo case if we again select first <code>l</code> letters of three <code>local</code> definitions and hit <code>C-x r N</code> we see this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">demo</span>()</span>
+  <span class="number">1</span> <span class="built_in">local</span> <span class="operator">a</span> = <span class="number">1</span>
+  <span class="number">2</span> <span class="built_in">local</span> b = <span class="number">2</span>
+  <span class="number">3</span> <span class="built_in">local</span> c = <span class="number">3</span>
+<span class="function"><span class="keyword">end</span></span>
+</pre></td></tr></table></figure>
+
+<p>I like this feature as it shows me how dynamic Emacs is not that I use it a lot.</p>
+<h2 id="Multiple_cursors">Multiple cursors</h2>
+<p>It’s <a href="https://github.com/magnars/multiple-cursors.el" target="_blank" rel="external">mc</a> library. It provides plenty of functions and I use only three with custom key bindings:</p>
+<ul>
+<li><code>C-&gt;</code> <code>mc/mark-next-like-this</code> adds the cursor on the next occurrence of<br>current selecion</li>
+<li><code>C-&lt;</code> <code>mc/mark-previous-like-this</code>adds the cursor on the previous occurrence of current selection</li>
+<li><code>C-c C-&lt;</code> <code>mc/mark-all-like-this</code> adds cursors on all the occurences in a buffer</li>
+</ul>
+<p>Example time:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">capitalizeName</span><span class="params">(name)</span></span>
+  <span class="keyword">return</span> name.uppercase
+<span class="keyword">end</span>
+</pre></td></tr></table></figure>
+
+<p>Put the cursor on <code>n</code> of <code>name</code> in arguments then <code>C-space M-f</code> to select the whole word and <code>C-&gt;</code> and watch as both <code>name</code> occurences are selected. If you type in anything it replaces both words with a new input. However sometimes I don’t want to rewrite whole occurrences so <code>C-g</code> cancel selections and leaves only cursors set. Hit <code>C-g</code> again to cancel additional cursors and leave original one.</p>
+<h2 id="Screen_layouts">Screen layouts</h2>
+<p>I always used to split screen at least vertically to have 2 windows when coding. So I searched for the same functionality in Emacs and it’s of course - a built-in feature. To cut a long story short these are the default key-bindings:</p>
+<ul>
+<li><code>C-x 1</code> make current buffer the only one visible and stretch to fill the whole window</li>
+<li><code>C-x 2</code> split frame horizontally</li>
+<li><code>C-x 3</code> split frame vertically</li>
+<li><code>C-x 0</code> kill current frame</li>
+</ul>
+<p>To switch between windows <code>C-x o</code>. It’s a sad thing it switches in order and you don’t have a way to define which exactly window with an arrow key or so. The commands split the current frame, so in case you split once vertically and again vertically You have <code>|AB|C|</code> layout. To auto resize all the frames <code>C-x +</code>.</p>
+<p>Better news - <a href="http://www.emacswiki.org/emacs/WindMove" target="_blank" rel="external">windmove</a>. I have only this line in my <code>.emacs</code>:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="list">(<span class="title">windmove-default-keybindings</span> 'meta)</span>
+</pre></td></tr></table></figure>
+
+<p>And what it allows me to do is <code>M-arrow</code> to switch between window frames. The good part it is quite self aware and intuitive so a must have plugin.</p>
+<p>Killer feature about frames I found is registers. <code>C-x r w _</code> means write window configuration to register where <code>_</code> is a character corresponding a register for example <code>a</code>.  Loading data from register or jumping is <code>C-x j _</code> where <code>_</code> is the name. </p>
+<p>Imagine a situation - you have window split into 4 parts opened different files and doing some work. For a minute you want to stare at one file in fullscreen. So <code>C-x o</code> until you hit the needed buffer <code>C-x 1</code> to make it fullscreen and now you need again to split windows, jump to buffers, etc. Don’t worry! Once you want to get rid of the layout temporarily hit <code>C-x r w a</code>  then navigate to buffer you want <code>C-x 1</code>. Once you have finished and want that layout back <code>C-x r j a</code> and they are back. This is such a good feature that Emacs immediately became instantly a lot better.</p>
+<h2 id="Themes">Themes</h2>
+<p>There are so many <a href="http://emacsthemes.caisah.info/" target="_blank" rel="external">emacs themes</a>. Also available in package list. You can choose any you want and modify each of them as you want. There’s only one negative thing I noticed about most of the themes - they cause my Emacs to crash and I am sure it’s because of themes. Despite that fact some themes are very awesome and you can easily switch between them with <code>M-x load-theme</code>.</p>
+<h2 id="More_cool_features_I_have_found">More cool features I have found</h2>
+<p>Neat features I have found while randomly wandering around the internet.</p>
+<h3 id="undo-tree">undo-tree</h3>
+<p>A cool plugin/mode you need to enable to get usage of. It shows Emacs undo-redo ring in a tree way which looks kinda cool but I am not used to it yet. Look at it:</p>
+<img src="/images/emacs/4/undo%20tree.jpg" class="[]">
+
+<p>Where <code>x</code> is the current position in a tree. You can choose the branches and if you choose a branch and do more changes it makes another branch so basically you can visually navigate through the tree with arrow keys and immediately see the changes in your active buffer.</p>
+<h3 id="Abbreviations">Abbreviations</h3>
+<p>This is what I fell immediately in love with. Abbreviations are like your own corrections which Emacs handles for me. I often type in “log:warn()” in our codebase to log the data in Lua but I often mistype “log” with “lgo” out of rush.</p>
+<p>There are two places where one can put in abbreviations. Those two places are: global scope and mode scope. For example I don’t want my “lgo-&gt;log” abbreviation to work everywhere. I want that only in lua major mode. That’s what <code>add-mode-abbrev</code> is for and <code>add-global-abbrev</code> is for global scope.</p>
+<p>Note! Abbreviations only work when <code>abbrev-mode</code> is enabled so be sure to <code>M-x abbrev-mode</code>. Keys for abbreviations:</p>
+<p><code>C-x a +</code> add-mode-abbrev<br><code>C-x a g</code> add-global-abbrev</p>
+<p>Example time!<br>Type in <code>logX</code> where X is the cursor. <code>C-x a g</code> and in the prompt type in <code>lgo</code>. From now on once <code>lgo</code> is typed and a space, return, tab, or any other non character input comes Emacs changes <code>lgo</code> into <code>log</code>. Neat!</p>
+<h3 id="Forgot_what_are_the_key_bindings_for_a_function?">Forgot what are the key bindings for a function?</h3>
+<p><code>M-x describe-function</code> prompts you for a function name and in the new buffer shows you attached key binding if one exists.</p>
+<h3 id="Want_to_know_information_about_some_variable?">Want to know information about some variable?</h3>
+<p>For example I ran Emacs on Windows and didn’t know where my .emacs file is stored.<br><code>M-x describe-variable</code> and type in <code>user-init-file</code>. Bam:</p>
+<hr>
+<p>user-init-file is a variable defined in `C source code’.<br>Its value is “c:/Users/Lukas/AppData/Roaming/.emacs”</p>
+<hr>
+<p>Now I want to open that file without touching my mouse because Emacs?</p>
+<p>I can <code>C-x C-f</code> or simply hold <code>C</code> then press <code>x</code> and <code>f</code> and I can type in the path to that file.</p>
+<p>I am really fancy so I will switch to that window with <code>C-x o</code> then <code>M-&lt;</code> to go to the beginning of the freshly opened buffer, put my cursor on the second line, then <code>C-3 M-f</code> to move my cursor 3 words forward, <code>C-space C-e</code> to start selecting and go to the end of the line and <code>M-w</code> to copy that file name. Now <code>C-x C-f</code> and I have file access prompt ready but it’s filled with my current path? <code>C-a C-k C-y</code> to go to the beginning of the line and kill the whole line forward and <code>C-y</code> to “yank” or paste our selection. Now the problem is that we have pasted with quotes around the text. So <code>C-a del</code> and <code>C-e backspace</code> to remove those. RET. Wow my .emacs file is opened.</p>
+<p>Man that was a chore. I bet any 5th grader with a mouse would do that faster. If you hate the manual stuff as much as I do read forward. We will simply define an Emacs command or record a macro(later post on those). Emacs uses elisp but for combining several commands it’s pretty easy to learn.</p>
+<p>Like how hard it is to write simple elisp code? In this case I want a function to copy contents between two double quotes on the current line my cursors is. Look:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre><span class="list">(<span class="title">defun</span> copy-in-quotes<span class="list">()</span>
+  <span class="list">(<span class="title">interactive</span>)</span>
+  <span class="list">(<span class="title"><span class="built_in">let</span></span> <span class="list">(<span class="title">p1</span> p2 line result found)</span>
+    <span class="list">(<span class="title">setq</span> p1 <span class="list">(<span class="title">line-beginning-position</span>)</span>)</span>
+    <span class="list">(<span class="title">setq</span> p2 <span class="list">(<span class="title">line-end-position</span>)</span>)</span>
+    
+    <span class="list">(<span class="title"><span class="built_in">if</span></span> <span class="list">(<span class="title"><span class="built_in">=</span></span> p1 p2)</span>
+      <span class="list">(<span class="title">message</span> <span class="string">"Empty line!"</span>)</span>
+        <span class="list">(<span class="title">setq</span> line <span class="list">(<span class="title">buffer-substring-no-properties</span> p1 p2)</span>)</span>
+        <span class="list">(<span class="title">setq</span> found <span class="list">(<span class="title">string-match</span> <span class="string">"\".+\""</span> line)</span>)</span>
+        <span class="list">(<span class="title">unless</span> found)</span>
+          <span class="list">(<span class="title">setq</span> result <span class="list">(<span class="title">match-string</span><span class="number"> 0</span> line)</span>)</span>
+          <span class="list">(<span class="title">message</span> result)</span>
+          <span class="list">(<span class="title">kill-new</span> result)</span>
+        )</span>     
+    )</span>
+  )</span>
+</pre></td></tr></table></figure>
+
+<p>Now If I again <code>describe-user-variable</code> and enter <code>user-init-file</code> move my cursor on that line, call this function and path is copied into my kill-ring. With a simple <code>(global-set-key (kbd &quot;C-c q c&quot;) &#39;copy-in-quotes)</code> I can bind this function to <code>C-c q c</code> key binding. Note that when binding your own key bindings use <code>C-c</code> not <code>C-x</code> as <code>C-x</code> is default Emacs key binding so you may overwrite some good stuff.</p>
+<p>Let me run through a brief explanation of what we did here:</p>
+<ul>
+<li><code>(interactive)</code> means our function can be called via <code>M-x name</code>. Simple as that.</li>
+<li><code>(message variable)</code> outputs the variable value in minibuffer area as I want to display what we have copied.</li>
+<li><code>(kill-new line)</code> actually doesn’t kill anything. This function simply puts the value in a kill-ring*.</li>
+<li><code>let</code> allows me to have some variables defined and used in scope. Form is <code>(let (a b c) (use-a-b-c))</code>.</li>
+<li><code>setq</code> sets value to the variable so works well in conjunction with <code>let</code>.</li>
+<li><code>buffer-substring-no-properties p1 p2</code> returns content with no additional information from buffer between two points <code>p1</code> and <code>p2</code>.</li>
+</ul>
+<p>I have mentioned <em>kill-ring</em>. In Emacs you actually don’t delete stuff or erase it. When you kill a line it doesn’t disappear. It exists in a kill ring. By removing one symbol at a time with DEL or BACKSPACE it doesn’t go to kill ring but for example <code>C-x k</code> which kills the whole line forward with respect to the cursor - does. </p>
+<h3 id="run_this_thing">run this thing</h3>
+<p>Put the cursor after the last parentheses <code>)</code> and hit <code>C-x C-e</code> to evaluate elisp code. Cool thing is - you can evaluate anywhere you want. I write some Lua code and want to quickly divide 8889 by 45? I type <code>(/ 8889 45)</code> hit <code>C-x C-e</code> and see the result at the bottom. Note that to cast result to float at least one operand needs to be a float so 8889 would be 8889.0 or 45 should be 45.0 as integers are promoted to floats when in doubt.</p>
+<p>Now as we have a function evaluated and no buffer opened with error message we can see functions name at the bottom our function name meaning Emacs got it. It has our new function. Now again: <code>M-x describe-variable</code> type ‘user-init-file’ then <code>M-&lt; arrow-down</code> and <code>M-x copy-in-quotes</code>and now the strings between quotes is copied into the clipboard. </p>
+<p>If I want to have this functionality always as I use Emacs, I need to open <code>.emacs</code> file again. As I haven’t killed it’s buffer previously with <code>C-x k</code> I can simply <code>C-x b ema RET</code> and buffer with <code>ema</code> pattern in its name opens. So <code>.emacs</code> is now opened. <code>M-&gt;</code> go to the end of the file then copy the function definition and key binding definition <code>C-x C-s</code> to save. </p>
+<p>As we have edited <code>.emacs</code> file we need to evaluate new code. We can:</p>
+<ul>
+<li>restart Emacs.</li>
+<li><code>M-x load-file .emacs</code> to evaluate elisp file.</li>
+<li>evaluate by hand each definition with <code>C-x C-e</code>.</li>
+</ul>
+<h2 id="Extra">Extra</h2>
+<p>Where to search for information about Emacs? Official website is a mind blowing resource describing every bit of Emacs and Elisp. It’s such a good documentation it deserves some kind of a medal.</p>
+<ul>
+<li><a href="http://www.gnu.org/manual/manual.html" title="Official guide" target="_blank" rel="external">Official guide</a></li>
+<li><a href="http://stackoverflow.com/questions/tagged/emacs" title="stackoverflow emacs tag" target="_blank" rel="external">Stackoverflow emacs tag</a></li>
+<li><a href="http://emacs.stackexchange.com/" title="emacs.stackexchange" target="_blank" rel="external">emacs.stackexchange</a></li>
+<li>IRC freenode #emacs channel</li>
+</ul>
+<p>For the last - IRC part I need to mention that all of you have heard a joke that Emacs is not just a text editor. So you want some quick help on IRC so you go to download IRC client or. No no no. Stop. <code>M-x rcirc</code> and see as it automatically connects to freenode irc server by default with a random nickname. <code>/join #emacs</code> and ask your question! People there are quick to respond and got me a lot of useful asnwers.</p>
+<h2 id="Conclusion">Conclusion</h2>
+<p>I was in doubt if I should begin again my journey through emacs and “waste” my time on it.  I always though that it’s quite useless to invest into such an editor as I though that one spends more time thinking about code than writing it.</p>
+<p>The light hit me once a coworker told me that vim made him navigate through the project more smoothly. I changed my perspective that a decent editor lets you dive into a project with more pleasure and maybe more easily. Currently I miss some features of sublime text which I believe can be done with some elisp so later on I will write more in depth guides.</p>
+<p>This post is not about teaching about Emacs or anything like that as I just mashed stuff from the tip of my tongue in one evening. With this post I wanted to show that Emacs is not some evil magical thing which is very hard to get started. Also I tried to show that Emacs is a pleasure to extend.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+
+  <nav id="pagination">
+  
+  
+    <a href="/archives/page/2/" class="alignright next">Next</a>
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:www.letsdive.in">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/./SICP/">SICP</a><small>2</small></li>
+  
+    <li><a href="/./Scheme/">Scheme</a><small>2</small></li>
+  
+    <li><a href="/./backtracking/">backtracking</a><small>1</small></li>
+  
+    <li><a href="/./bower/">bower</a><small>1</small></li>
+  
+    <li><a href="/./brainfuck/">brainfuck</a><small>1</small></li>
+  
+    <li><a href="/./c/">c</a><small>2</small></li>
+  
+    <li><a href="/./c++/">c++</a><small>3</small></li>
+  
+    <li><a href="/./csp/">csp</a><small>1</small></li>
+  
+    <li><a href="/./editor/">editor</a><small>5</small></li>
+  
+    <li><a href="/./emacs/">emacs</a><small>5</small></li>
+  
+    <li><a href="/./functional-programming/">functional programming</a><small>2</small></li>
+  
+    <li><a href="/./glsl/">glsl</a><small>5</small></li>
+  
+    <li><a href="/./graphics/">graphics</a><small>5</small></li>
+  
+    <li><a href="/./grunt/">grunt</a><small>1</small></li>
+  
+    <li><a href="/./javascript/">javascript</a><small>14</small></li>
+  
+    <li><a href="/./productivity/">productivity</a><small>5</small></li>
+  
+    <li><a href="/./project-euler/">project euler</a><small>5</small></li>
+  
+    <li><a href="/./style/">style</a><small>1</small></li>
+  
+    <li><a href="/./sudoku/">sudoku</a><small>1</small></li>
+  
+    <li><a href="/./voronoi/">voronoi</a><small>1</small></li>
+  
+    <li><a href="/./workflow/">workflow</a><small>1</small></li>
+  
+    <li><a href="/./yeoman/">yeoman</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Lukas Pukenis
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'letsdive';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-44498783-1', 'letsdive.in');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>

@@ -1,0 +1,939 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>graphics | Lets Dive!</title>
+  <meta name="author" content="Lukas Pukenis">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Lets Dive!"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Lets Dive!" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Lets Dive!</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">graphics</h2>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-02-16T18:19:50.000Z"><a href="/2015/02/16/day--or--night/">Feb 16 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/02/16/day--or--night/">Day or Night</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>There was an interesting problem - to decide if given image is day or night. This is a problem on HackerRank and this solution should only be used as a reference because its more fun to solve those challenges yourself.</p>
+<p>The input comes in as <code>r1, g1, b1 r2, g2, b2 r3, g3, b3 ...</code>. So the image decoding is handled for us. Given all the pixels how should we decide is the image day or night?</p>
+<p>Calculating average <strong>RGB</strong> value provides nothing sensible as RGB is not linear with respect to lighting. To convert RGB to something what maps light linearly we have some choices like HSV or HSL. HSV Cylinder proves that lightness is quite linear</p>
+<img src="/images/common/hsv_cylinder.png" class="[]">
+
+<p>So I’ve copied this code from somewhere, really cant recall where:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="code"><pre><span class="comment">// assumes r, g, b are in [0 .. 1.0] range</span>
+<span class="keyword">void</span> RGB2HSV(<span class="keyword">float</span> r, <span class="keyword">float</span> g, <span class="keyword">float</span> b, <span class="keyword">float</span> &h, <span class="keyword">float</span> &s, <span class="keyword">float</span> &v) {
+  <span class="keyword">float</span> K = <span class="number">0.f</span>;
+
+  <span class="keyword">if</span> (g &lt; b) {
+    <span class="built_in">std</span>::swap(g, b);
+    K = -<span class="number">1.f</span>;
+  }
+
+  <span class="keyword">if</span> (r &lt; g) {
+    <span class="built_in">std</span>::swap(r, g);
+    K = -<span class="number">2.f</span> / <span class="number">6.f</span> - K;
+  }
+
+  <span class="keyword">float</span> chroma = r - <span class="built_in">std</span>::min(g, b);
+  h = <span class="built_in">fabs</span>(K + (g - b) / (<span class="number">6.f</span> * chroma + <span class="number">1e-20</span>f));
+  s = chroma / (r + <span class="number">1e-20</span>f);
+  v = r;
+}
+</pre></td></tr></table></figure>
+
+<p>which is simply direct translation of wikipedia formulas I believe.</p>
+<p>Now I will SUM all the <strong>R</strong>, <strong>G</strong> and <strong>B</strong> values and get the average. Now with given average pixel<br>of the image I can convert it to HSV and check for <strong>V(light intensity)</strong> value.</p>
+<p>If you want to see HSV in effect, you can open any image editing software(Photoshop) or just click <a href="https://www.shadertoy.com/view/Xlf3zs" target="_blank" rel="external">this Shadertoy url</a>. It’s a Shadertoy demo I made. Bottom left quad is the normal view. Top left is <strong>H</strong>ue, bottom right is for <strong>S</strong>aturation and top right is for <strong>L</strong>ighting. Each value is multiplied by a different coefficient and time so you can see them in effect out of sync(imho better).</p>
+<p>So as we have our average pixel, just convert it to HSV. Now take the <strong>V</strong> value and compare it against some threshold. Voila. This is some cheap and dirty detection.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+</pre></td><td class="code"><pre><span class="keyword">int</span> main() {
+  <span class="keyword">auto</span> rSum = <span class="number">0.0</span>;
+  <span class="keyword">auto</span> gSum = <span class="number">0.0</span>;
+  <span class="keyword">auto</span> bSum = <span class="number">0.0</span>;
+
+  <span class="keyword">auto</span> size = <span class="number">0</span>;
+
+  <span class="built_in">std</span>::<span class="built_in">string</span> entry;
+  <span class="keyword">while</span> (<span class="built_in">std</span>::<span class="built_in">cin</span> &gt;&gt; entry) {
+    <span class="built_in">std</span>::replace(entry.begin(), entry.end(), <span class="string">','</span>, <span class="string">' '</span>);
+    <span class="built_in">std</span>::<span class="built_in">stringstream</span> input(entry);
+
+    <span class="keyword">int</span> r, g, b;
+
+    input &gt;&gt; r;
+    input &gt;&gt; g;
+    input &gt;&gt; b;
+
+    rSum += r;
+    gSum += g;
+    bSum += b;
+    size++;
+  }
+
+  <span class="keyword">if</span> (size == <span class="number">0</span>) <span class="keyword">return</span> -<span class="number">1</span>;
+
+  <span class="keyword">auto</span> rAvg = rSum / size;
+  <span class="keyword">auto</span> gAvg = gSum / size;
+  <span class="keyword">auto</span> bAvg = bSum / size;
+  
+  rAvg /= <span class="number">255.0</span>;
+  gAvg /= <span class="number">255.0</span>;
+  bAvg /= <span class="number">255.0</span>;
+
+  <span class="keyword">auto</span> threshold = <span class="number">0.7</span>;
+
+  <span class="keyword">float</span> h, s, v;
+  RGB2HSV(rAvg, gAvg, bAvg, h, s, v);
+
+  <span class="keyword">if</span> (v &lt; threshold) {
+    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"night"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+  }
+  <span class="keyword">else</span> {
+    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"day"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+  }
+
+  <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre></td></tr></table></figure>
+
+<p>Again. Dont copy paste this code if you don’t get it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-16T17:24:40.000Z"><a href="/2014/06/16/Reflections-and-Refractions/">Jun 16 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/16/Reflections-and-Refractions/">Reflections and Refractions</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>When I have made a raymarched sphere I was quite happy. But I wanted to make a glass one. So the first experiment was to make a sphere which only worked like a lens. Just to see what’s behind it with a bit refracted rays.</p>
+<p>I shoot a ray from the eye adjusting it for the current pixel with<br><code>vec3 ray_dir = normalize(up * uv.y + right *uv.x + forward);</code><br>Where <code>right</code> and <code>forward</code> are just static vectors and <code>uv</code> is my current pixel. Like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> up = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>);
+<span class="keyword">vec3</span> forward = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>);
+<span class="keyword">vec3</span> right = <span class="built_in">cross</span>(up, forward);
+</pre></td></tr></table></figure>
+
+<p>So now once my ray hit the ball, I didn’t take the pixel from the texture and display it but I have used a cubemap. First for the refraction I am happy <em>GLSL</em> handles it internally as well as <code>reflect()</code>, I just need a vector and a vector I am going refract on and of course a coefficient. For the cubemap there is <code>textureCube()</code> instead of <code>texture2D()</code>. So the whole magic happens here:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> refracted_ray = <span class="built_in">refract</span>(ray_dir, -point_normal, refract_koef);
+<span class="keyword">vec4</span> refracted_color = <span class="built_in">textureCube</span>(iChannel2, refracted_ray);
+</pre></td></tr></table></figure><br>I use <code>-point_normal</code> because I refract the ray going from me instead of going into me that’s why I invert it and <code>refract_koef</code> is <code>1.02</code>. Refraction coefficient only needs to be above <code>1</code> to be a convex lens and below <code>1</code> to be a concave lens. Now for the rays that don’t hit anything I need to draw a normal pixel from the cubemap:<br><code>gl_FragColor = textureCube(iChannel2, ray_dir);</code><br><br>The pseudocode is this:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="keyword">...</span>
+float dist = raymarch(<span class="keyword">...</span>);
+<span class="keyword">if</span> (dist &lt; max_distance) {
+  vec3 refracted_ray = refract(ray_dir, -point_normal, refract_koef);
+  vec4 refracted_color = textureCube(iChannel2, refracted_ray);   
+} <span class="keyword">else</span> {
+  gl_FragColor = textureCube(iChannel2, ray_dir);  
+}
+<span class="keyword">...</span>
+</pre></td></tr></table></figure><br>And the result looks good:<br><img src="/images/raymarch/reflect.jpg" class="[]">
+
+<p>I wanted to push this lens a bit forward and make it look like a sphere - so reflections too. For this I simply need to reflect the ray, get the pixel from the cubemap and mix reflection and refraction colors. Reflection is even more easy. Now <code>point_normal</code> is positive because it points my the viewers eye.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> reflected_ray = <span class="built_in">reflect</span>(ray_dir, point_normal);    
+<span class="keyword">vec4</span> reflected_color = <span class="built_in">textureCube</span>(iChannel2, reflected_ray);
+</pre></td></tr></table></figure><br>And I mix the colors with <code>gl_FragColor = mix(reflected_color, refracted_color, 0.5);</code>. This shows up:<br><img src="/images/raymarch/refract.jpg" class="[]">
+
+<p>It reflects rays and also refracts but it isn’t realistic as I have hardcoded a constant <code>0.5</code> so refraction and reflection rays are combined as equals while in reality the more straight I look into the object the more refraction I see and less reflection while on the other hand when I look into the object from the side almost all I can see are - reflections. To fix this I have found fresnel lens algorithm on <a href="http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter19.html" target="_blank" rel="external">GPU Gems 2</a>. So we simply need to get coefficient between reflection and refraction and it looks ok when written like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="keyword">float</span> fresnelBias = <span class="number">0.00</span>;
+<span class="keyword">float</span> fresnelScale = <span class="number">0.25</span>;
+<span class="keyword">float</span> fresnelPower = <span class="number">1.97</span>;
+<span class="keyword">float</span> mix_coef = fresnelBias + fresnelScale*<span class="built_in">pow</span>(<span class="number">1.0</span> + <span class="built_in">dot</span>(ray_dir, point_normal), fresnelPower);
+</pre></td></tr></table></figure><br>The constants are hand tweaked because I didn’t find any suitable ones. So consider this an experiment. So now my color is calculated with this:<br><code>vec4 mixed = mix(reflected_color, refracted_color, mix_coef);</code>;<br>And the result looks more realistic:<br><img src="/images/raymarch/fresnel_bubble.jpg" class="[]">
+
+<p>The last thing which I wanted to do - a rainbow on a bubble. This is due to the different refraction coefficient of colors, so to implement this I refract R, G and B components of a texel differently. Again - the coefficients are hand tweaked:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> etaRatioRGB = <span class="keyword">vec3</span>(<span class="number">1.03</span>, <span class="number">1.06</span>, <span class="number">1.09</span>);
+
+<span class="keyword">vec3</span> TRed   = <span class="built_in">refract</span>(ray_dir, -point_normal, etaRatioRGB.r);
+<span class="keyword">vec3</span> TGreen = <span class="built_in">refract</span>(ray_dir, -point_normal, etaRatioRGB.g);
+<span class="keyword">vec3</span> TBlue  = <span class="built_in">refract</span>(ray_dir, -point_normal, etaRatioRGB.b);
+
+<span class="keyword">vec4</span> refracted_color;
+refracted_color.r = <span class="built_in">textureCube</span>(iChannel2, TRed).r;
+refracted_color.g = <span class="built_in">textureCube</span>(iChannel2, TGreen).g;
+refracted_color.b = <span class="built_in">textureCube</span>(iChannel2, TBlue).b;
+</pre></td></tr></table></figure><br>And the result looks bubbly!:<br><img src="/images/raymarch/real_bubble.jpg" class="[]">
+
+<p>In conclusion - it was really fun and quite fun and fresnel lens formula really makes sense. From my understanding as <code>ray_dir</code> and <code>point_normal</code> are normalized the <code>dot</code> just gives me a <code>cos</code> of those vectors so when I look forward into the bubble I get <code>1</code> which maximizes refractions I see and when I look from the very side into it all I can see are reflections because of <code>cos</code> giving me zero. The <code>pow</code> there exists because of <a href="http://en.wikipedia.org/wiki/Inverse-square_law" target="_blank" rel="external">inverse square law</a> or I believe so.</p>
+<p>For the bonus here is the concave lens with <code>refract_koef = 0.98;</code>:</p>
+<img src="/images/raymarch/concave_lens.jpg" class="[]">
+
+<p>You can see the code and tweak it also online here:<br><a href="https://www.shadertoy.com/view/ldsSW7" target="_blank" rel="external">Lens on Shadertoy</a><br><a href="https://www.shadertoy.com/view/lslSW7" target="_blank" rel="external">Bubble on Shadertoy</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-14T18:04:28.000Z"><a href="/2014/06/14/Voronoi-diagram/">Jun 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/14/Voronoi-diagram/">Voronoi Diagram</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="Voronoi">Voronoi</h3>
+<p>Voronoi diagram is a method for dividing space into a set of regions. We have a set of points and each region is a container of points/pixels closer to that exact point than the others.</p>
+<p>A quick play on <a href="https://www.shadertoy.com/view/ldlXDM" target="_blank" rel="external">Shadertoy</a> shows me that it’s easy as it sounds. Of course it’s inefficient and complexity of this implementation is <code>O(N^2)</code> because of loop going through all the points and searching for the closest one. This is the result:</p>
+<img src="/images/voronoi/voronoi.jpg" class="[]">
+
+<p>I found this algorithm to be very promising for procedural generation for example for <a href="https://www.google.com/search?site=imghp&amp;tbm=isch&amp;source=hp&amp;biw=1920&amp;bih=979&amp;q=shattered+glass&amp;oq=shattered+glass&amp;gs_l=img.3..0l10.818.2651.0.2741.15.10.0.2.2.0.293.1196.0j4j2.6.0....0...1ac.1.46.img..7.8.1209.XONa_u_F-lg&amp;gws_rd=ssl" target="_blank" rel="external">shattered glass</a> or <a href="https://www.google.com/search?site=imghp&amp;tbm=isch&amp;source=hp&amp;biw=1920&amp;bih=979&amp;q=shattered+glass&amp;oq=shattered+glass&amp;gs_l=img.3..0l10.818.2651.0.2741.15.10.0.2.2.0.293.1196.0j4j2.6.0....0...1ac.1.46.img..7.8.1209.XONa_u_F-lg&amp;gws_rd=ssl#q=voronoi+nature&amp;tbm=isch" target="_blank" rel="external">these random examples</a>. I will of course try to build something nice with this thing.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-17T22:49:03.000Z"><a href="/2014/05/18/glsl---raymarching/">May 18 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/18/glsl---raymarching/">Glsl   Raymarching</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>My second part about GLSL is about raymarching - a simple method to draw figures by shooting “rays” all over the field of view and if the ray collides with an object, we draw something like a pixel or like a lighted pixel from a texture.</p>
+<h3 id="Tricks">Tricks</h3>
+<p>The first trick of ray marching is that when we shoot the ray, we increment it and to squeeze better performance we do not increase it by a fixed rate but rather by a dynamic one. The question is - how dynamic? The trick is to get the distance of the nearest object and move that amount forward because we are sure the ray will not collide with any object in that path.</p>
+<h3 id="My_approach">My approach</h3>
+<p>My approach is a very basic and simple one. I simply want a ball in the middle of the screen defined only by it’s radius and nothing more. Making ray collide with a circle is kids play.</p>
+<h3 id="Lets_begin">Lets begin</h3>
+<p>So of course I have my circle radius, let’s call it R. <code>#define R 0.3</code><br>Then I want to normalize my pixel position into <code>[-1..1]</code> range, so:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>vec2 uv = ((<span class="number">2.0</span> * gl_FragCoord<span class="preprocessor">.xy</span>) - iResolution<span class="preprocessor">.xy</span>) / min(iResolution<span class="preprocessor">.x</span>, iResolution<span class="preprocessor">.y</span>)<span class="comment">;</span>
+</pre></td></tr></table></figure><br>Next thing we need I believe is the distance function to our circle. Now distance to the circle is probably the easiest task :)<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre><span class="keyword">float</span> get_distance(vec3 <span class="keyword">point</span>) {
+  <span class="keyword">return</span> <span class="built_in">length</span>(<span class="keyword">point</span>) - R;
+}
+</pre></td></tr></table></figure>
+
+<p>Here we accept our 3D point vector and we also assume it’s in the center of the screen. <code>length</code> is a built-in of GLSL no need to write it ourselves. Actually now, we are almost there to draw a circle :). We have our circle defined, the distance function, we need only camera/eye vector and do the rays.</p>
+<h3 id="Define_our_eye">Define our eye</h3>
+<p>Lets say I want to be viewing directly to the center but from some distance. This means I need to modify only Z value.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> eye_pos = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, -<span class="number">3.0</span>);
+</pre></td></tr></table></figure><br>Eye position alone is not enough so I have to define where my eye is looking<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> forward = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>);
+</pre></td></tr></table></figure>
+
+<p>My eye is looking forward. Actually it doesn’t matter the exact number of Z part, it can be anything but the vector needs to be normalized in order to get correct results. We can simply pass in <code>3.5</code> instead of <code>1.0</code> but then we should wrap it into <code>normalize()</code>.</p>
+<h3 id="Turn_on_the_lights!">Turn on the lights!</h3>
+<p>Lets define the light.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> light = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, -<span class="number">3.0</span>);
+</pre></td></tr></table></figure>
+
+<p>Our light will be at the same place where our eye.</p>
+<h3 id="Rays">Rays</h3>
+<p>We now need to shoot rays all over the scene to detect the object. We define the <em>up</em> vector. It will be used as a helper by doing cross product of it and forward vector.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> up = <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>);
+</pre></td></tr></table></figure><br>And we already have the forward vector(direction of where our eye is looking). We can’t easily calculate each ray’s vector so we defined the <code>up</code> vector in order to get the perpendicular vector - a cross product.<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> right = <span class="built_in">cross</span>(up, forward);
+</pre></td></tr></table></figure><br>Now this <em>right</em> vector is pointing perpendiculary to our eye direction and <em>up</em> vector. We simply adjust it a bit and get a vector to shoot(so we would not shoot always to the same spot).<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> ray_dir = <span class="built_in">normalize</span>(up * uv.y + right*uv.x + forward);
+</pre></td></tr></table></figure>
+
+<p>And here we go. For each pixel going from <code>-1.0</code> to <code>1.0</code> we calculate the ray vector. Let me explain the reasoning - we take the up vector multiply it by <code>y</code> coordinate of the pixel to adjust the vertical shift of our ray then we multiply our right vector by pixel’s <code>x</code> value to adjust horizontally. Now we squash those two terms together and add a forward vector. There may be a question - why? It’s just to point the ray to the direction where we are looking.</p>
+<h3 id="Ray_march_it">Ray march it</h3>
+<p>Finally the last lego part we need is ray marching function. This function will return the distance if the object was hit. If it fails to find any object for a hit it returns a maximum distance so we could draw something like a black background or a sky or a wall.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="preprocessor">#define MAX_STEPS 100</span>
+
+<span class="keyword">float</span> raymarch(<span class="keyword">vec3</span> ray_origin, <span class="keyword">vec3</span> ray_direction) {
+  <span class="keyword">float</span> d = <span class="number">0.0</span>;
+
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; MAX_STEPS; i++) {
+    <span class="keyword">vec3</span> new_point = ray_origin + ray_direction*d;
+    <span class="keyword">float</span> s = get_distance(new_point);
+    <span class="keyword">if</span> (s &lt; epsilon) <span class="keyword">return</span> d;
+    d += s;
+    <span class="keyword">if</span> (d &gt; max_distance) <span class="keyword">return</span> max_distance;
+  }
+  <span class="keyword">return</span> max_distance;
+}
+</pre></td></tr></table></figure><br>Let’s break down the things. First we define the maximum of steps to raymarch. The bigger the number - the better quality of a scene for the price of performance. Our function accepts ray origin point and it’s direction. Since we project the image into an “eye” so it is our <code>ray_origin</code> and direction is <code>ray_dir</code> which we have calculated just above.<br><br>So now the drawing goes like this:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="keyword">...</span>
+float d = raymarch(eye_pos, ray_dir);
+
+<span class="keyword">if</span> (d &lt; max_distance) {
+gl_FragColor = vec4(<span class="number">1.0</span>);
+ } <span class="keyword">else</span> {
+gl_FragColor = vec4(<span class="number">0.0</span>);
+}
+<span class="keyword">...</span>
+</pre></td></tr></table></figure>
+
+<p>Now we simply get a white circle in the middle of a screen with black background.</p>
+<img src="/images/raymarch/white.jpg" class="[]">
+
+<h3 id="Lighting">Lighting</h3>
+<p>It’s pretty easy to make a feeling of 3D as we have a distance returned. The lighting works simply by taking cosine of light vector and surface normal(vector pointing up with respect to a point). For this operation we need to get a normal vector of our point.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> get_normal(<span class="keyword">vec3</span> point) {
+  <span class="keyword">float</span> d0 = get_distance(point);
+  <span class="keyword">float</span> dX = get_distance(point - <span class="keyword">vec3</span>(epsilon, <span class="number">0.0</span>, <span class="number">0.0</span>));
+  <span class="keyword">float</span> dY = get_distance(point - <span class="keyword">vec3</span>(<span class="number">0.0</span>, epsilon, <span class="number">0.0</span>));
+  <span class="keyword">float</span> dZ = get_distance(point - <span class="keyword">vec3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, epsilon));
+  <span class="keyword">return</span> <span class="built_in">normalize</span>(dX-d0, dY-d0, dZ-d0);
+}
+</pre></td></tr></table></figure><br>The trick to get point’s normal in our case is to calculate distances to the points that are farther backwards in all directions by just a tiny bit. Then we take the differences and construct the normal. And so:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="code"><pre><span class="keyword">...</span>
+vec3 ray_dir = normalize(up * uv.y + right *uv.x + forward);
+
+float d = raymarch(eye_pos, ray_dir);
+<span class="keyword">if</span> (d &lt; max_distance) {
+  vec3 point = (eye_pos+ray_dir*d);
+  vec3 point_normal = get_normal(point);
+  vec3 light_dir = -normalize(light-point);
+  float dotp_diffuse = max(<span class="number">0.0</span>, dot(light_dir, point_normal));
+    gl_FragColor = vec4(dotp_diffuse);
+<span class="keyword">...</span>
+</pre></td></tr></table></figure><br>The <code>dotp_diffuse</code> is dot product of diffusion(direct color of light on the circle). As the vectors are normalized it’s simply a cosine of light vector and surface normal. If the light hits the surface at 0 angle it will be 1.0 if they are perpendicular it’s 0.<br><br>To paint the circle in a color I need to simply multiply color vector by <code>dotp_diffuse</code>, like so <code>vec4(0.0, 0.0, 1.0, 1.0) * dotp_diffuse</code>. This gives us a blue shaded circle:<br><img src="/images/raymarch/blue%20shaded.jpg" class="[]">
+
+<h3 id="More_fun">More fun</h3>
+<p>We can do more fun with this circle. Like <em>bump map</em> it. In our case we can simply adjust the <code>get_distance()</code> function to return a bit distorted distances by a noise(from a noise texture on iChannel1. It’s Shadertoy thing).</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="keyword">float</span> get_distance(vec3 <span class="keyword">point</span>) {
+  <span class="keyword">float</span> bump = <span class="number">0.0</span>;
+  <span class="keyword">if</span> ( <span class="built_in">length</span>(<span class="keyword">point</span>) &lt; R + bump_factor) {
+    bump = bump_factor * texture2D(iChannel1, <span class="keyword">point</span>.xy).r;
+  }
+  <span class="keyword">return</span> <span class="built_in">length</span>(<span class="keyword">point</span>) - R + bump;
+}
+</pre></td></tr></table></figure><br>Here’s cheap bump mapping:<br><img src="/images/raymarch/bump%20blue.jpg" class="[]">
+
+<p>Now note that I chose the incorrect method for getting a point from a texture as it’s a circle and I directly access it without any transform. For this reason I borrowed this technique from <a href="https://www.shadertoy.com/user/iq" target="_blank" rel="external">Inigo Quilez</a>. And here it is:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="keyword">vec4</span> texture3d (<span class="keyword">sampler2D</span> t, <span class="keyword">vec3</span> p, <span class="keyword">vec3</span> n, <span class="keyword">float</span> scale) {
+  <span class="keyword">return</span>
+    <span class="built_in">texture2D</span>(t, p.yz * scale) * <span class="built_in">abs</span> (n.x) +
+    <span class="built_in">texture2D</span>(t, p.xz * scale) * <span class="built_in">abs</span> (n.y) +
+    <span class="built_in">texture2D</span>(t, p.xy * scale) * <span class="built_in">abs</span> (n.z);
+}
+</pre></td></tr></table></figure>
+
+<p>I pass in the texture, point, point normal and scale. I will show it’s usage later.</p>
+<h3 id="Attenuation">Attenuation</h3>
+<p>A thing to fix would be - color attenuation. The farther the distance, the more dimmed the color.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">float</span> attenuation = <span class="number">1.0</span> / (<span class="number">1.0</span> + K*<span class="built_in">pow</span>( <span class="built_in">length</span>(<span class="shader"><span class="keyword">light</span> - point), 2.0));</span>
+</pre></td></tr></table></figure>
+
+<p>It works by <a href="http://en.wikipedia.org/wiki/Inverse-square_law" target="_blank" rel="external">inverse square law</a> - color intensity minimizes squarely as distance increases.</p>
+<h3 id="Specular_lighting">Specular lighting</h3>
+<p>We have diffuse lighting and there’s a specular one. We need a vector of the reflected light and GLSL has a built-in called <code>reflect()</code>. So we can simply do:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="keyword">vec3</span> reflected_light_dir = <span class="built_in">reflect</span>(-light_dir, point_normal);
+</pre></td></tr></table></figure><br>Not to forget the ambient light. If it’s not pitch black we should have some ambient color. I am not going to calculate it and simply will hardcode it <code>#define ambient 0.4</code> and add it to the final color vector.<br><br>Here’s textured sphere with very small and rare bumps and diffuse, specular and ambient lighting.<br><img src="/images/raymarch/textured.jpg" class="[]">
+
+<h3 id="Plane">Plane</h3>
+<p>I would like to have a shadow. But to cast a shadow I need to have a surface to cast it on, so lets assume we will have an infinite plane. A shorthand to check if point is on a plane - <code>dot(point, plane_normal) - elevation</code>. As I want to have floor, it becomes <code>dot(point, vec(0.0, 1.0, 0.0)) - 1.0</code>. If elevation would be zero - the plane would be invisible to our eye.</p>
+<p>I am not going to separate it into a new function but will simply adjust <code>get_distance()</code> to calculate if it hits the ball or a plane.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="keyword">float</span> get_distance(vec3 <span class="keyword">point</span>) {
+  <span class="keyword">float</span> bump = <span class="number">0.0</span>;
+  <span class="keyword">float</span> elevation = -<span class="number">1.0</span>;
+
+  <span class="keyword">if</span> ( <span class="built_in">length</span>(<span class="keyword">point</span>) &lt; R + bump_factor) {
+    bump = bump_factor * texture3d(iChannel1, <span class="keyword">point</span>, <span class="built_in">normalize</span>(-<span class="keyword">point</span>), <span class="number">0.5</span>).r;
+  }
+  <span class="keyword">return</span> <span class="built_in">min</span>(
+    <span class="built_in">length</span>(<span class="keyword">point</span>) - R + bump,
+    dot(<span class="keyword">point</span>, vec3(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>)) - elevation
+  );
+}
+</pre></td></tr></table></figure>
+
+<p>Here we can also see the usage example of <code>texture3d()</code>. <code>get_distance()</code> now returns the minimum of length to circle or a plane. Which one is closer - that one is hit of course.</p>
+<h3 id="Shadow">Shadow</h3>
+<p>To cast a shadow I do it like this: first when I know the ray hit a point(a plane or a ball because shadow can be on both) I take that point and raymarch again by using that collision point as source point and direct it to the light. Now if the ray did collide with something along the path it means we should cast a shadow. Like if it’s a plane or a ball and just above the ball there’s a light. Then the area on the bottom of the ball(on the plane) will shoot rays to the light and hit ball and so we have a shadow.</p>
+<p>We will make a soft shadow without sharp edges.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre><span class="keyword">float</span> shadow_sample (<span class="keyword">vec3</span> org, <span class="keyword">vec3</span> dir) {
+    <span class="keyword">float</span> res = <span class="number">1.0</span>;
+    <span class="keyword">float</span> t = epsilon*<span class="number">20.0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i =<span class="number">0</span>; i &lt; <span class="number">100</span>; i++){
+        <span class="keyword">float</span> h = get_distance (org + dir*t);
+    <span class="keyword">if</span> (h &lt;= epsilon) {
+            <span class="keyword">return</span> <span class="number">0.0</span>;
+    }
+        res = <span class="built_in">min</span> (res, <span class="number">32.0</span>*h/t);
+        t += h;
+    <span class="keyword">if</span> (t &gt;= max_distance) {
+          <span class="keyword">return</span> res;
+    }
+
+    }
+    <span class="keyword">return</span> res;
+}
+</pre></td></tr></table></figure><br>Lets breakdown this thing. We have <code>t</code> which is increased by some constant. It’s because <code>get_distance()</code> might get the same point we’re shooting from since the starting point is near ball/plane. A value of <code>20.0</code> in this case works for me since lower values cause visual artefacts I can’t explain :-).<br><br>Within a loop we get distance <code>h</code>. If it hits something(checking approximately with epsilon) then it’s a pitch black. Otherwise we set <code>res</code> to be min of itself(since we don’t want to loose it’s accumulated value) and distance divided by step - “shadow step”. <code>32.0</code> multiplier is there for shadow softness - the higher the value the harder the shadow.<br><br>We put in the shadow into equation by multiplying everything by <code>shadow_sample(point, -light_dir)</code>. And we get kinda huge and ugly equation which begs for a refactoring. But for experimenting purposes it does it’s job. Final result can be looked at and tweaked here: <a href="https://www.shadertoy.com/view/XssXDH" target="_blank" rel="external">link</a>.<br><img src="/images/raymarch/final.jpg" class="[]">
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-11T13:47:25.000Z"><a href="/2014/05/11/glsl-basics/">May 11 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/11/glsl-basics/">Glsl Basics</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>I’ve started to experiment with <a href="http://en.wikipedia.org/wiki/OpenGL_Shading_Language" target="_blank" rel="external">GLSL</a>(OpenGL Shading Language) and done a few easy examples. I play with them on <a href="https://www.shadertoy.com/" target="_blank" rel="external">www.shadertoy.com</a>.</p>
+<p>The hardest task was to grasp the concept that while writing shaders there’s no state. Of course I can keep the state by passing uniform values(kinda global variables) which I can set up in the code, pass to the shader and for all the pixels(in case of fragment shader) get the same value.</p>
+<p>As there’s no state, well except for the time in shaderToy case it’s <code>iGlobalTime</code> I need to calculate what I should need to draw, like a circle, then grab the current pixel, see if it’s approximately nearby my circle and draw a pixel.</p>
+<p>Let’s have a small demo which will draw a horizontal line crossing vertical line in the middle.</p>
+<p>First, GLSL doesn’t have PI value defined. Why? I don’t know, so let’s define it:<br><code>const float PI = 3.14159265359;</code></p>
+<p>Our current pixel position is inside <code>gl_FragCoord</code>. We can access <code>x</code> and <code>y</code> values of it but I like<br>my data normalized, so I normalize it like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="keyword">float</span> x = <span class="built_in">gl_FragCoord</span>.x / iResolution.x;
+<span class="keyword">float</span> y = <span class="built_in">gl_FragCoord</span>.y / iResolution.y;
+</pre></td></tr></table></figure>
+
+<p><code>iResolution</code> inside shadertoy has width/height set as <code>x</code> and <code>y</code> respectively. Now our <code>x</code> and <code>y</code> is in range 0..1 and we don’t care anymore about resolution, width or length.</p>
+<p>The center in 0..1 range is of course 0.5. Now we need some tolerance which will define how approximate our pixels will be horizontally and vertically:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="keyword">float</span> thicknessH = <span class="number">0.01</span>;
+<span class="keyword">float</span> thicknessV = <span class="number">0.01</span>;
+</pre></td></tr></table></figure>
+
+<p>Note that in this case, we don’t operate on pixels so 0.01 is not like 1 pixel or so. It depends on the resolution.</p>
+<p>So now check if we’re near the center:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="keyword">float</span> diffY = <span class="built_in">abs</span>(<span class="number">0.5</span> - y);
+<span class="keyword">float</span> diffX = <span class="built_in">abs</span>(<span class="number">0.5</span> - x);
+</pre></td></tr></table></figure>
+
+<p>How do we check? Get the difference between center(0.5) and our x and y values then of course check if it’s smaller or equal to our tolerance and draw a pixel.</p>
+<p>The full source is this:</p>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td><td class="code"><pre><span class="keyword">void</span> main(<span class="keyword">void</span>) {
+  <span class="keyword">const</span> <span class="keyword">float</span> PI = <span class="number">3.14159265359</span>;
+  <span class="keyword">float</span> thicknessH = <span class="number">0.01</span>;
+  <span class="keyword">float</span> thicknessV = <span class="number">0.01</span>;
+
+  <span class="keyword">float</span> y = <span class="built_in">gl_FragCoord</span>.y / iResolution.y;
+  <span class="keyword">float</span> x = <span class="built_in">gl_FragCoord</span>.x / iResolution.x;
+
+  <span class="keyword">float</span> diffY = <span class="built_in">abs</span>(<span class="number">0.5</span> - y);
+  <span class="keyword">float</span> gradY = diffY;
+
+  <span class="keyword">float</span> diffX = <span class="built_in">abs</span>(<span class="number">0.5</span> - x);
+  <span class="keyword">float</span> gradX = diffX;
+
+  <span class="keyword">if</span> ( diffY &lt; thicknessH || diffX &lt; thicknessV) {
+    <span class="built_in">gl_FragColor</span> = <span class="keyword">vec4</span>(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span> );
+  } <span class="keyword">else</span> {
+    <span class="built_in">gl_FragColor</span> = <span class="keyword">vec4</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span> );
+  }
+}
+</pre></td></tr></table></figure><br>And the result can be played with <a href="https://www.shadertoy.com/view/MssXWn" target="_blank" rel="external">here</a>.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:www.letsdive.in">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/./SICP/">SICP</a><small>2</small></li>
+  
+    <li><a href="/./Scheme/">Scheme</a><small>2</small></li>
+  
+    <li><a href="/./backtracking/">backtracking</a><small>1</small></li>
+  
+    <li><a href="/./bower/">bower</a><small>1</small></li>
+  
+    <li><a href="/./brainfuck/">brainfuck</a><small>1</small></li>
+  
+    <li><a href="/./c/">c</a><small>2</small></li>
+  
+    <li><a href="/./c++/">c++</a><small>3</small></li>
+  
+    <li><a href="/./csp/">csp</a><small>1</small></li>
+  
+    <li><a href="/./editor/">editor</a><small>5</small></li>
+  
+    <li><a href="/./emacs/">emacs</a><small>5</small></li>
+  
+    <li><a href="/./functional-programming/">functional programming</a><small>2</small></li>
+  
+    <li><a href="/./glsl/">glsl</a><small>5</small></li>
+  
+    <li><a href="/./graphics/">graphics</a><small>5</small></li>
+  
+    <li><a href="/./grunt/">grunt</a><small>1</small></li>
+  
+    <li><a href="/./javascript/">javascript</a><small>14</small></li>
+  
+    <li><a href="/./productivity/">productivity</a><small>5</small></li>
+  
+    <li><a href="/./project-euler/">project euler</a><small>5</small></li>
+  
+    <li><a href="/./style/">style</a><small>1</small></li>
+  
+    <li><a href="/./sudoku/">sudoku</a><small>1</small></li>
+  
+    <li><a href="/./voronoi/">voronoi</a><small>1</small></li>
+  
+    <li><a href="/./workflow/">workflow</a><small>1</small></li>
+  
+    <li><a href="/./yeoman/">yeoman</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Lukas Pukenis
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'letsdive';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-44498783-1', 'letsdive.in');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Perfect Web Dev Workflow | Lets Dive!</title>
+  <meta name="author" content="Lukas Pukenis">
+  
+  <meta name="description" content="Setting up a workspace quickly for a new project is a time saver but can be a real pain in the 
+1
+&#39;#bada55&#39;.substr(4, 3).replace(/5/g, &#39;s&#39;);
+There are">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Perfect Web Dev Workflow"/>
+  <meta property="og:site_name" content="Lets Dive!"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Lets Dive!" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Lets Dive!</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+    <div class="gallery">
+  <div class="photoset">
+    
+      <img src="">
+    
+  </div>
+  <div class="control">
+    <div class="prev"></div>
+    <div class="next"></div>
+  </div>
+</div>
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2013-10-26T18:25:02.000Z"><a href="/2013/10/26/perfect-web-dev-workflow/">Oct 26 2013</a></time>
+      
+      
+  
+    <h1 class="title">Perfect Web Dev Workflow</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Setting up a workspace quickly for a new project is a time saver but can be a real pain in the </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="string">'#bada55'</span>.substr(<span class="number">4</span>, <span class="number">3</span>).replace(<span class="regexp">/5/g</span>, <span class="string">'s'</span>);
+</pre></td></tr></table></figure><br>There are modern tools for helping js development: <b>yeoman, bower and grunt</b>. For a quick experiment jsfiddle is great but it’s downside - it’s an online app meaning sometimes there’s a big lag and slowdown in development.<br><br>### What do I need? ###<br>1) Generate files and directories quickly: <em>script, style, assets, etc</em>. Then of course: <em>index.html, app.js, style.scss, etc</em>.<br>2) Prefill files with basic constructs like setting HTML doctype, tags, include styles, scripts.<br>3) Run quickly and have watcher running so I would get an output as quickly as I press <em>CTRL+S</em>.<br>4) Because I love test driven development - run tests as soon as I press <em>CTRL+S</em>.<br><br>So now just lets consider scenario where I simply want to experiment with just a simple app which has an input where I enter my name, age and it greets me with a message “Hi name, you are x years old”. Deadly simple as it sounds.<br><br>### Lets begin! ###<br>1) You need node.js installed. It’s up to you to do so. Single google query and 20seconds from that you have node.js running.<br>2) Install <strong><em>Yeoman</em></strong>. Run this: <em>npm install -g yo</em>. What does -g does - install node module globally so you can refer to it from anywhere.<br>3) Install <strong><em>Bower</em></strong>. Run this: <em>npm install -g bower</em>.<br>4) Install <strong><em>Grunt</em></strong>. Run this: <em>npm install -g grunt-cli</em>.<br><br>Now you need a generator for <em>yo</em>. A generator is a structure, a blueprint. So: <em>npm install -g generator-webapp</em>.<br><strong><em>generator-webapp</em></strong> is a generator for basic web application. Thats the one I need. There are a lot of others and of course you can write your own.<br><br>### Just joking. Lets really begin! ###<br>Open terminal/command line somewhere. Create a new directory. CD into it and run<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>yo webapp
+</pre></td></tr></table></figure><br>Now you have launched a generator and you can see every file it creates, every operation it does. We will need jQuery for your project. So lets go to jQuery website, click on download link. Wait. Remember <strong><em>bower</em></strong>? Run<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>bower <span class="keyword">install</span> jquery
+</pre></td></tr></table></figure><br>That’s all. Now you will find a directory called <em>bower_components</em> which holds all your installed packages in this case <em>jquery</em>. The good thing about bower is that you can remove packages, add packages, update packages.<br><br><strong><em>Note</em></strong> that you will be greeted with questions both from Yeoman and Bower. Just keep answering depending on what you need. For example bower asked me which jQuery version I prefer. This is up to you.<br><br>At this point we can run the server and see our app. Just run:<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="comment">grunt</span> <span class="comment">server</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">force</span>
+</pre></td></tr></table></figure><br>The flag <em>—force</em> ignores any warnings which prevent from grunt running. In my case I do not have Ruby and Compass installed in my system. Nor do I care at this moment. So after running <em>grunt server —force</em> you can see your app opened in browser. Now the greatness about this is this - try to open your app folder then <em>index.html</em>.<br><br>Find<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">h1</span>&gt;</span>'Allo, 'Allo!<span class="tag">&lt;/<span class="title">h1</span>&gt;</span>
+</pre></td></tr></table></figure><br>and replace with<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">h1</span>&gt;</span>Hello<span class="tag">&lt;/<span class="title">h1</span>&gt;</span>
+</pre></td></tr></table></figure>
+
+<p>And as soon as you press <em>CTRL+S</em> your browser immediately refreshes itself. If you have scss or coffeescript files - they get compiled too. Great!</p>
+<h3 id="I_am_ready_for_some_karma!">I am ready for some karma!</h3>
+<p>Lets install karma(renamed from testacular) - a test runner.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>npm <span class="keyword">install</span> -g karma
+</pre></td></tr></table></figure><br>Great done. Karma is ready. Now initialize it<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>karma init
+</pre></td></tr></table></figure><br>some questions will be greeted but it doesn’t really matter as we can change config file later. I just chose Jasmine test framework and PhantomJS for browser as I do not want any browser popup. The only other interesting place inside generated <em>karma.conf.js</em> is <em>files</em> array containing all the JS files as well as specs, so I filled in as appropriate:<br><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre>files: [
+  <span class="string">'app/scripts/**/*.js'</span>,
+  <span class="string">'test/spec/**/*.js'</span>
+]
+</pre></td></tr></table></figure><br>Be aware of autowatch flag! I need this bad boy to be set to true. I want test running every damn save :). Ready? So<br><figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>karma <span class="command">run</span>
+</pre></td></tr></table></figure><br>and watch the amazingness happen. It will just report about the tests but as I try to modify my source files or specs it reruns the tests!<br>So my current test looks like this<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre>describe(<span class="string">'check age function'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+  it(<span class="string">'should get correct age'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    expect(age(<span class="keyword">new</span> <span class="built_in">Date</span>(<span class="number">1989</span>, <span class="number">11</span>, <span class="number">18</span>))).toEqual(<span class="number">23</span>);
+  });
+  
+  it(<span class="string">'should return false when date is older than today'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    expect(age(<span class="keyword">new</span> <span class="built_in">Date</span>(<span class="number">2020</span>, <span class="number">01</span>, <span class="number">05</span>))).toBe(<span class="literal">false</span>);
+  });
+  
+  it(<span class="string">'should return false when date is not set'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    expect(age()).toBe(<span class="literal">false</span>);
+  });
+  
+  it(<span class="string">'should return false when date is a random string'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    expect(age(<span class="string">'nots a date'</span>)).toBe(<span class="literal">false</span>);
+  });
+});
+</pre></td></tr></table></figure><br>and code is dead simple<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="code"><pre><span class="comment">// Returns false in case birth_date is not a date or is older than today or age</span>
+<span class="function"><span class="keyword">function</span> <span class="title">age</span><span class="params">(birth_date)</span> {</span>
+  <span class="keyword">if</span> (!(birth_date <span class="keyword">instanceof</span> <span class="built_in">Date</span>) || !birth_date || birth_date.getTime() &gt; <span class="built_in">Date</span>.now()) <span class="keyword">return</span> <span class="literal">false</span>;
+  
+  <span class="keyword">var</span> birth_time = birth_date.getTime();
+  <span class="comment">// 24 hours/day, 60minutes/hour, 60secs/minute, 365.25 approx. days/year, 1000ms</span>
+  <span class="keyword">return</span> <span class="built_in">Math</span>.floor((+<span class="keyword">new</span> <span class="built_in">Date</span>() - birth_date) / (<span class="number">24</span> * <span class="number">60</span> * <span class="number">60</span> * <span class="number">365.25</span> * <span class="number">1000</span>));
+}
+</pre></td></tr></table></figure>
+
+<h3 id="App_part">App part</h3>
+<p>Now I need some kind of interface. Quick, ugly interface. My HTML looks like</p>
+<p><figure class="highlight html"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre><span class="doctype">&lt;!doctype html&gt;</span>
+  <span class="tag">&lt;<span class="title">head</span>&gt;</span>      
+    <span class="tag">&lt;<span class="title">script</span> <span class="attribute">src</span>=<span class="value">"/bower_components/jquery/jquery.js"</span>&gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">script</span> <span class="attribute">src</span>=<span class="value">"scripts/main.js"</span>&gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+  <span class="tag">&lt;/<span class="title">head</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">body</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"container"</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">p</span>&gt;</span>What is your name?<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"text"</span> <span class="attribute">name</span>=<span class="value">"name"</span>&gt;</span><span class="tag">&lt;/<span class="title">input</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">p</span>&gt;</span>What is your birthdate? YYYY.MM.DD<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"text"</span> <span class="attribute">name</span>=<span class="value">"date"</span>&gt;</span><span class="tag">&lt;/<span class="title">input</span>&gt;</span>      
+      <span class="tag">&lt;<span class="title">div</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">button</span> <span class="attribute">id</span>=<span class="value">"submit"</span>&gt;</span>Greet me!<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+      <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;/<span class="title">div</span>&gt;</span>              
+<span class="tag">&lt;/<span class="title">body</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">html</span>&gt;</span>
+</pre></td></tr></table></figure><br>and final code like this</p>
+<p><figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="code"><pre><span class="comment">// Returns false in case birth_date is not a date or is older than today or age</span>
+<span class="function"><span class="keyword">function</span> <span class="title">age</span><span class="params">(birth_date)</span> {</span>
+  <span class="keyword">if</span> (!(birth_date <span class="keyword">instanceof</span> <span class="built_in">Date</span>) || !birth_date || birth_date.getTime() &gt; <span class="built_in">Date</span>.now()) <span class="keyword">return</span> <span class="literal">false</span>;
+  
+  <span class="keyword">var</span> birth_time = birth_date.getTime();
+  <span class="comment">// 24 hours/day, 60minutes/hour, 60secs/minute, 365.25 approx. days/year, 1000ms</span>
+  <span class="keyword">return</span> ~~((+<span class="keyword">new</span> <span class="built_in">Date</span>() - birth_date) / (<span class="number">24</span> * <span class="number">60</span> * <span class="number">60</span> * <span class="number">365.25</span> * <span class="number">1000</span>));
+}
+
+$(document).ready(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+  $(<span class="string">'#submit'</span>).on(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">var</span> name = $(<span class="string">'input[name="name"]'</span>).val();
+    <span class="keyword">var</span> date = $(<span class="string">'input[name="date"]'</span>).val();    
+    <span class="keyword">var</span> parts = date.split(<span class="string">'.'</span>);
+    
+    date = <span class="keyword">new</span> <span class="built_in">Date</span>(parts[<span class="number">0</span>], parts[<span class="number">1</span>], parts[<span class="number">2</span>]);
+    alert(<span class="string">'Greetings '</span>+name+<span class="string">'. Your age is '</span>+age(date));
+  });
+});
+</pre></td></tr></table></figure><br>And yes! On save tests are launched as well as the app is refreshed.</p>
+<p><strong> Note! </strong> karma will complain that <em>$</em> is undefined as it will run <em>main.js</em> so do not forget to include jQuery in <em>karma.conf.js</em>.</p>
+<h3 id="In_the_end">In the end</h3>
+<p>I will follow this again in a few days(probably when creating something unamazing) and will update the record about how much time I spent following these steps.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/./workflow/">workflow</a>, <a href="/./javascript/">javascript</a>, <a href="/./yeoman/">yeoman</a>, <a href="/./grunt/">grunt</a>, <a href="/./bower/">bower</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:www.letsdive.in">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/./SICP/">SICP</a><small>2</small></li>
+  
+    <li><a href="/./Scheme/">Scheme</a><small>2</small></li>
+  
+    <li><a href="/./backtracking/">backtracking</a><small>1</small></li>
+  
+    <li><a href="/./bower/">bower</a><small>1</small></li>
+  
+    <li><a href="/./brainfuck/">brainfuck</a><small>1</small></li>
+  
+    <li><a href="/./c/">c</a><small>2</small></li>
+  
+    <li><a href="/./c++/">c++</a><small>3</small></li>
+  
+    <li><a href="/./csp/">csp</a><small>1</small></li>
+  
+    <li><a href="/./editor/">editor</a><small>5</small></li>
+  
+    <li><a href="/./emacs/">emacs</a><small>5</small></li>
+  
+    <li><a href="/./functional-programming/">functional programming</a><small>2</small></li>
+  
+    <li><a href="/./glsl/">glsl</a><small>5</small></li>
+  
+    <li><a href="/./graphics/">graphics</a><small>5</small></li>
+  
+    <li><a href="/./grunt/">grunt</a><small>1</small></li>
+  
+    <li><a href="/./javascript/">javascript</a><small>14</small></li>
+  
+    <li><a href="/./productivity/">productivity</a><small>5</small></li>
+  
+    <li><a href="/./project-euler/">project euler</a><small>5</small></li>
+  
+    <li><a href="/./style/">style</a><small>1</small></li>
+  
+    <li><a href="/./sudoku/">sudoku</a><small>1</small></li>
+  
+    <li><a href="/./voronoi/">voronoi</a><small>1</small></li>
+  
+    <li><a href="/./workflow/">workflow</a><small>1</small></li>
+  
+    <li><a href="/./yeoman/">yeoman</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Lukas Pukenis
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'letsdive';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-44498783-1', 'letsdive.in');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
